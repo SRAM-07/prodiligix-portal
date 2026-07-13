@@ -1,0 +1,332 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import { MdArrowBack, MdDownload, MdAttachFile, MdPerson, MdDescription, MdAdminPanelSettings, MdUpload, MdClose } from 'react-icons/md';
+
+const detail = {
+  id: 'STMP-20260703001',
+  firstPartyName: 'Roppen Transportation Services Private Limited',
+  firstPartyPan: '',
+  secondPartyName: 'SWAI Technologies Private Limited',
+  secondPartyPan: '',
+  considerationValue: 0,
+  denomination: 500,
+  description: 'Addendum Agreement\nArticle - 5j',
+  stampDutyPaidBy: 'First Party',
+  quantity: 1,
+  procurementCharges: 50,
+  gstFee: 9,
+  totalCharges: 559,
+  requestDate: '2026-07-03',
+  deliveryDate: '',
+  status: 'Booked',
+  scannedCopyUrl: null,
+  scannedCopyName: null,
+};
+
+const statusOptions = ['Booked', 'In Printing', 'In Transit', 'Delivered'];
+
+const statusConfig = {
+  'Booked': { color: '#068BC9', bg: '#e0f2fe' },
+  'In Printing': { color: '#8b5cf6', bg: '#ede9fe' },
+  'In Transit': { color: '#f97316', bg: '#ffedd5' },
+  'Delivered': { color: '#22c55e', bg: '#dcfce7' },
+  'Cancelled': { color: '#ef4444', bg: '#fee2e2' },
+};
+
+export default function StampPaperDetail() {
+  const navigate = useNavigate();
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [status, setStatus] = useState(detail.status);
+  const [deliveryDate, setDeliveryDate] = useState(detail.deliveryDate);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
+  const isCancelled = status === 'Cancelled';
+  const isBooked = status === 'Booked';
+  const isDelivered = status === 'Delivered';
+  const s = statusConfig[status] || statusConfig['Booked'];
+
+  const handleCancelSubmit = () => {
+    if (!cancelReason.trim()) return;
+    setStatus('Cancelled');
+    setShowCancelModal(false);
+    setCancelReason('');
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar onToggle={setSidebarExpanded} />
+
+      <div
+        className="flex-1 transition-all duration-300"
+        style={{ marginLeft: sidebarExpanded ? '240px' : '64px' }}>
+
+        {/* Topbar */}
+        <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
+          <button
+            onClick={() => navigate('/stamp-paper')}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <MdArrowBack size={20} className="text-gray-600" />
+          </button>
+          <div className="flex-1">
+            <p className="text-gray-400 text-xs">Stamp Paper Procurement</p>
+            <h1 className="text-base font-bold text-gray-800">{detail.id}</h1>
+          </div>
+          <span className="text-xs font-medium px-3 py-1.5 rounded-full"
+            style={{ color: s.color, backgroundColor: s.bg }}>
+            {status}
+          </span>
+        </div>
+
+        <div className="p-6 max-w-5xl mx-auto">
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <p className="text-xs text-gray-400 mb-1">Denomination</p>
+              <p className="text-xl font-bold text-gray-800">₹{detail.denomination}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Stamp Paper Value</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <p className="text-xs text-gray-400 mb-1">Quantity</p>
+              <p className="text-xl font-bold text-gray-800">{detail.quantity}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Stamp Papers</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <p className="text-xs text-gray-400 mb-1">Total Charges</p>
+              <p className="text-xl font-bold" style={{ color: '#068BC9' }}>₹{detail.totalCharges}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Incl. GST</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <p className="text-xs text-gray-400 mb-1">Request Date</p>
+              <p className="text-xl font-bold text-gray-800">{detail.requestDate}</p>
+            </div>
+          </div>
+
+          {/* Party Details */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MdPerson size={18} style={{ color: '#068BC9' }} />
+              <p className="text-sm font-semibold text-gray-700">Party Details</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'First Party Name *', value: detail.firstPartyName },
+                { label: 'First Party PAN Number', value: detail.firstPartyPan || 'Not provided' },
+                { label: 'Second Party Name *', value: detail.secondPartyName },
+                { label: 'Second Party PAN Number', value: detail.secondPartyPan || 'Not provided' },
+              ].map((f, i) => (
+                <div key={i}>
+                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                    <span className="text-sm text-gray-700">{f.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Stamp Paper Details */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MdDescription size={18} style={{ color: '#068BC9' }} />
+              <p className="text-sm font-semibold text-gray-700">Stamp Paper Details</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {[
+                { label: 'Consideration Value *', value: `₹${detail.considerationValue}` },
+                { label: 'Denomination of Stamp Paper *', value: `₹${detail.denomination}` },
+              ].map((f, i) => (
+                <div key={i}>
+                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                    <span className="text-sm text-gray-700">{f.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Description of Stamp Paper *</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 min-h-20">
+                  <span className="text-sm text-gray-700 whitespace-pre-line">{detail.description}</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Stamp Duty Paid By *</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                    <span className="text-sm text-gray-700">{detail.stampDutyPaidBy}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Quantity of Stamp Paper *</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                    <span className="text-sm text-gray-700">{detail.quantity}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Section */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MdAdminPanelSettings size={18} style={{ color: '#068BC9' }} />
+              <p className="text-sm font-semibold text-gray-700">Admin Section</p>
+            </div>
+
+            {/* Charges */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {[
+                { label: 'Procurement Charges *', value: `₹${detail.procurementCharges}` },
+                { label: 'GST on Procurement Fee *', value: `₹${detail.gstFee}` },
+                { label: 'Total Charges *', value: `₹${detail.totalCharges}`, highlight: true },
+              ].map((f, i) => (
+                <div key={i}>
+                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                    <span className="text-sm font-semibold" style={{ color: f.highlight ? '#068BC9' : '#374151' }}>{f.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Status + Delivery Date */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Status *</p>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  disabled={isCancelled}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                  {statusOptions.map((opt, i) => (
+                    <option key={i}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              {isDelivered && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Delivery Date *</p>
+                  <input
+                    type="date"
+                    value={deliveryDate}
+                    onChange={e => setDeliveryDate(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Upload Stamp Paper */}
+            <div className="mb-4">
+              <p className="text-xs text-gray-400 mb-1">Upload Stamp Paper (PDF)</p>
+              {detail.scannedCopyUrl ? (
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <MdAttachFile size={16} style={{ color: '#068BC9' }} />
+                    <span className="text-sm text-gray-600 truncate">{detail.scannedCopyName || 'Document.pdf'}</span>
+                  </div>
+                  <button className="p-1 rounded hover:bg-gray-100">
+                    <MdDownload size={16} style={{ color: '#068BC9' }} />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                    <MdUpload size={18} style={{ color: '#068BC9' }} />
+                    <span className="text-sm text-gray-500">
+                      {uploadFile ? uploadFile.name : 'Click to upload PDF'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={e => setUploadFile(e.target.files[0])}
+                    />
+                  </label>
+                  {uploadFile && (
+                    <div className="flex items-center justify-between mt-2 bg-blue-50 rounded-lg px-3 py-2">
+                      <span className="text-xs text-gray-600">{uploadFile.name}</span>
+                      <button onClick={() => setUploadFile(null)}>
+                        <MdClose size={14} className="text-gray-400" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex justify-between items-center pb-4">
+            <div>
+              {isBooked && !isCancelled && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="px-5 py-2.5 rounded-lg text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors">
+                  Cancel Request
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/stamp-paper')}
+                className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Back
+              </button>
+              {!isCancelled && (
+                <button
+                  className="px-6 py-2.5 rounded-lg text-sm text-white font-medium transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#068BC9' }}>
+                  Update
+                </button>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-semibold text-red-500">Cancel Stamp Paper Booking</h3>
+              <button onClick={() => setShowCancelModal(false)}>
+                <MdClose size={18} className="text-gray-400" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Please provide a cancellation reason (mandatory)</p>
+            <textarea
+              rows={4}
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              placeholder="Enter cancellation reason..."
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-300 resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                Close
+              </button>
+              <button
+                onClick={handleCancelSubmit}
+                disabled={!cancelReason.trim()}
+                className="flex-1 py-2 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
+                style={{ backgroundColor: '#ef4444' }}>
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
