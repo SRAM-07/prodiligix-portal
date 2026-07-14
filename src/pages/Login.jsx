@@ -1,31 +1,57 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { login } from '../services/authService';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    console.log('Login clicked with:', email, password);
+    try {
+      setLoading(true);
+      setError('');
+      console.log('Calling API...');
+      const data = await login(email, password);
+      console.log('API response:', data); 
+
+      // Store token and user
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data));
+
+      // Role based redirect
+      if (data.role === 'super_admin' || data.role === 'crm_user') {
+        navigate('/dashboard');
+      } else if (data.role === 'company_admin' || data.role === 'company_crm_user') {
+        navigate('/client-dashboard');
+      } else {
+        navigate('/client-dashboard');
+      }
+    } catch (error) {
+      setError('Invalid email or password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center relative  py-0"
-      style={{ 
+    <div
+      className="min-h-screen flex items-center justify-center relative py-0"
+      style={{
         backgroundImage: 'url(/bg.png)',
         backgroundSize: '100%',
         backgroundPosition: 'center center',
         backgroundRepeat: 'no-repeat',
-        backgroundColor: '#f0f9ff'  
+        backgroundColor: '#f0f9ff'
       }}>
-      
+
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm relative z-10">
-        
+
         {/* Logo */}
         <div className="flex flex-col items-center mb-0">
           <img src="/logo.png" alt="ProDiligix" className="h-33 mb-0 object-contain" />
@@ -34,6 +60,13 @@ export default function Login() {
         <h2 className="text-lg font-semibold text-gray-700 mb-10 text-center">
           Log in to your account
         </h2>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100">
+            <p className="text-xs text-red-500 text-center">{error}</p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleLogin}>
@@ -60,17 +93,17 @@ export default function Login() {
           </div>
 
           <div className="flex justify-end mb-5">
-            <a href="#" className="text-sm" style={{ color: '#068BC9' }}>
+            <a href="/forgot-password" className="text-sm" style={{ color: '#068BC9' }}>
               Forgot password?
             </a>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#068BC9' }}
-          >
-            Login
+            disabled={loading}
+            className="w-full py-3 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: '#068BC9' }}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
