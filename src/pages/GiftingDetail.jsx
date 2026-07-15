@@ -1,56 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
   MdArrowBack, MdDownload, MdUpload, MdCheckCircle, MdCancel,
   MdHistory, MdClose
 } from 'react-icons/md';
-
-const giftingDetail = {
-  id: 'CG-20260701001',
-  companyName: 'Rapido Technologies Pvt. Ltd.',
-  contactPerson: 'Ankit Sharma',
-  designation: 'HR Manager',
-  email: 'ankit.sharma@rapido.bike',
-  phone: '+91 98765 43210',
-  purposeOfGifting: 'Employee Appreciation',
-  estimatedQuantity: '100-200',
-  deliveryType: 'Bulk Delivery to One Location',
-  preferredItems: ['Custom Apparel (T-shirts, Hoodies)', 'Drinkware (Mugs, Bottles)'],
-  itemBrands: {
-    'Custom Apparel (T-shirts, Hoodies)': ['Nike', 'Puma'],
-    'Drinkware (Mugs, Bottles)': ['Milton', 'Others'],
-  },
-  brandingRequirements: ['Logo Printed', 'Custom Sleeves'],
-  logoPrintedOptions: ['Embroidery', 'Screen printing'],
-  additionalServices: ['Warehousing', 'Custom Kit Building'],
-  specificNotes: 'Please ensure all items are packed in eco-friendly boxes.',
-  requiredDeliveryDate: '2026-07-20',
-  expectedDeliveryDate: '2026-07-18',
-  actualDeliveryDate: '',
-  podCopy: null,
-  quotationStatus: 'initialized',
-  createdAt: '2026-07-01',
-};
-
-const quotationHistory = [
-  {
-    id: 1,
-    quotationNumber: 'QTN-001',
-    fileName: 'Quotation_CG001_v1.pdf',
-    fileUrl: '#',
-    status: 'rejected',
-    rejectionReason: 'Price too high, please revise.',
-  },
-  {
-    id: 2,
-    quotationNumber: 'QTN-002',
-    fileName: 'Quotation_CG001_v2.pdf',
-    fileUrl: '#',
-    status: 'initialized',
-    rejectionReason: '',
-  },
-];
+import api from '../services/api';
 
 const statusConfig = {
   accepted: { color: '#22c55e', bg: '#dcfce7', label: 'Accepted' },
@@ -70,18 +25,45 @@ function InfoRow({ label, value }) {
 
 export default function GiftingDetail() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [quotations, setQuotations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
-  const [quotations, setQuotations] = useState(quotationHistory);
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  const detail = giftingDetail;
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const [detailRes, quotationsRes] = await Promise.all([
+          api.get(`/api/corporate-giftings/${id}`),
+          api.get(`/api/corporate-giftings/${id}/quotations`)
+        ]);
+        setDetail(detailRes.data);
+        setQuotations(quotationsRes.data);
+      } catch (error) {
+        console.error('Failed to fetch gifting detail:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
 
-  const handleAccept = (quotationId) => {
-    setQuotations(prev =>
-      prev.map(q => q.id === quotationId ? { ...q, status: 'accepted' } : q)
-    );
+  const handleAccept = async (quotationId) => {
+    try {
+      await api.post(`/api/corporate-giftings/${id}/quotations/${quotationId}/accept`);
+      const [detailRes, quotationsRes] = await Promise.all([
+        api.get(`/api/corporate-giftings/${id}`),
+        api.get(`/api/corporate-giftings/${id}/quotations`)
+      ]);
+      setDetail(detailRes.data);
+      setQuotations(quotationsRes.data);
+    } catch (error) {
+      console.error('Failed to accept quotation:', error);
+    }
   };
 
   const handleRejectClick = (quotationId) => {
@@ -89,17 +71,37 @@ export default function GiftingDetail() {
     setShowRejectModal(true);
   };
 
-  const handleRejectSubmit = () => {
+  const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) return;
-    setQuotations(prev =>
-      prev.map(q => q.id === selectedQuotationId
-        ? { ...q, status: 'rejected', rejectionReason: rejectReason }
-        : q)
-    );
-    setShowRejectModal(false);
-    setRejectReason('');
-    setSelectedQuotationId(null);
+    try {
+      await api.post(`/api/corporate-giftings/${id}/quotations/${selectedQuotationId}/reject`, {
+        reason: rejectReason
+      });
+      const [detailRes, quotationsRes] = await Promise.all([
+        api.get(`/api/corporate-giftings/${id}`),
+        api.get(`/api/corporate-giftings/${id}/quotations`)
+      ]);
+      setDetail(detailRes.data);
+      setQuotations(quotationsRes.data);
+      setShowRejectModal(false);
+      setRejectReason('');
+      setSelectedQuotationId(null);
+    } catch (error) {
+      console.error('Failed to reject quotation:', error);
+    }
   };
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading...</p>
+    </div>
+  );
+
+  if (!detail) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Not found</p>
+    </div>
+  );
 
   const overallStatus = statusConfig[detail.quotationStatus] || statusConfig.pending;
 
@@ -121,11 +123,10 @@ export default function GiftingDetail() {
             </button>
             <div>
               <p className="text-gray-400 text-xs">Corporate Gifting</p>
-              <h1 className="text-base font-bold text-gray-800">{detail.id}</h1>
+              <h1 className="text-base font-bold text-gray-800">{detail.serviceRequestId}</h1>
             </div>
           </div>
-          <span
-            className="text-xs font-semibold px-3 py-1 rounded-full"
+          <span className="text-xs font-semibold px-3 py-1 rounded-full"
             style={{ color: overallStatus.color, backgroundColor: overallStatus.bg }}>
             {overallStatus.label}
           </span>
@@ -137,8 +138,8 @@ export default function GiftingDetail() {
           <div className="grid grid-cols-4 gap-4">
             {[
               { label: 'Company', value: detail.companyName },
-              { label: 'Contact Person', value: detail.contactPerson },
-              { label: 'Required Delivery', value: detail.requiredDeliveryDate },
+              { label: 'Contact Person', value: detail.contactPersonName },
+              { label: 'Required Delivery', value: detail.requiredDeliveryDate || '—' },
               { label: 'Expected Delivery', value: detail.expectedDeliveryDate || 'Pending' },
             ].map((card, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -150,18 +151,18 @@ export default function GiftingDetail() {
 
           <div className="grid grid-cols-3 gap-5">
 
-            {/* Left — Request Details */}
+            {/* Left */}
             <div className="col-span-2 flex flex-col gap-5">
 
-              {/* Contact & Company Info */}
+              {/* Contact Info */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Contact Information</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <InfoRow label="Company Name" value={detail.companyName} />
-                  <InfoRow label="Contact Person" value={detail.contactPerson} />
+                  <InfoRow label="Contact Person" value={detail.contactPersonName} />
                   <InfoRow label="Designation" value={detail.designation} />
                   <InfoRow label="Email" value={detail.email} />
-                  <InfoRow label="Phone" value={detail.phone} />
+                  <InfoRow label="Phone" value={detail.primaryPhone} />
                 </div>
               </div>
 
@@ -175,55 +176,6 @@ export default function GiftingDetail() {
                   <InfoRow label="Required Delivery Date" value={detail.requiredDeliveryDate} />
                   <InfoRow label="Expected Delivery Date" value={detail.expectedDeliveryDate || 'Pending'} />
                 </div>
-
-                {/* Preferred Items & Brands */}
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-2">Preferred Items & Brands</p>
-                  <div className="flex flex-col gap-1.5">
-                    {detail.preferredItems.map((item, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: '#068BC9' }} />
-                        <span className="text-sm text-gray-700">
-                          {item}
-                          {detail.itemBrands[item] && (
-                            <span className="text-xs text-gray-400 ml-1">
-                              (Brands: {detail.itemBrands[item].join(', ')})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Branding */}
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-2">Branding Requirements</p>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.brandingRequirements.map((b, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
-                        {b}
-                        {b === 'Logo Printed' && detail.logoPrintedOptions.length > 0 && (
-                          <span className="text-gray-400 ml-1">({detail.logoPrintedOptions.join(', ')})</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Additional Services */}
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-2">Additional Services</p>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.additionalServices.map((s, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-600 font-medium">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notes */}
                 {detail.specificNotes && (
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Specific Notes</p>
@@ -245,8 +197,7 @@ export default function GiftingDetail() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        <th className="text-left text-xs text-gray-400 font-medium pb-2">Quotation #</th>
-                        <th className="text-left text-xs text-gray-400 font-medium pb-2">File</th>
+                        <th className="text-left text-xs text-gray-400 font-medium pb-2">#</th>
                         <th className="text-left text-xs text-gray-400 font-medium pb-2">Status</th>
                         <th className="text-left text-xs text-gray-400 font-medium pb-2">Rejection Reason</th>
                         <th className="text-left text-xs text-gray-400 font-medium pb-2">Actions</th>
@@ -257,22 +208,14 @@ export default function GiftingDetail() {
                         const s = statusConfig[q.status] || statusConfig.pending;
                         return (
                           <tr key={i} className="border-b border-gray-50">
-                            <td className="py-3 text-sm text-gray-700">{q.quotationNumber}</td>
-                            <td className="py-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">{q.fileName}</span>
-                                <button className="p-1 rounded hover:bg-gray-100">
-                                  <MdDownload size={14} style={{ color: '#068BC9' }} />
-                                </button>
-                              </div>
-                            </td>
+                            <td className="py-3 text-sm text-gray-700">Q-{q.id}</td>
                             <td className="py-3">
                               <span className="text-xs font-medium px-2 py-1 rounded-full"
                                 style={{ color: s.color, backgroundColor: s.bg }}>
                                 {s.label}
                               </span>
                             </td>
-                            <td className="py-3 text-xs text-gray-500">{q.rejectionReason || '—'}</td>
+                            <td className="py-3 text-xs text-gray-500">{q.rejectedReason || '—'}</td>
                             <td className="py-3">
                               {q.status === 'initialized' && (
                                 <div className="flex items-center gap-2">
@@ -309,7 +252,8 @@ export default function GiftingDetail() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">POD File</h3>
                 {detail.podCopy ? (
                   <button
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
+                    onClick={() => window.open(detail.podCopy, '_blank')}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium text-white"
                     style={{ backgroundColor: '#068BC9' }}>
                     <MdDownload size={16} />
                     Download POD
@@ -319,21 +263,28 @@ export default function GiftingDetail() {
                 )}
               </div>
 
-              {/* CRM Admin Section */}
+              {/* Admin Actions */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
-
-                {/* Upload Quotation */}
                 <div className="mb-4">
                   <p className="text-xs text-gray-400 mb-2">Upload Quotation</p>
                   <button
+                    onClick={async () => {
+                      try {
+                        await api.post(`/api/corporate-giftings/${id}/quotations`);
+                        const quotationsRes = await api.get(`/api/corporate-giftings/${id}/quotations`);
+                        setQuotations(quotationsRes.data);
+                        const detailRes = await api.get(`/api/corporate-giftings/${id}`);
+                        setDetail(detailRes.data);
+                      } catch (error) {
+                        console.error('Failed to upload quotation:', error);
+                      }
+                    }}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-500 transition-colors">
                     <MdUpload size={16} />
-                    Upload PDF
+                    Upload Quotation
                   </button>
                 </div>
-
-                {/* Expected Delivery Date */}
                 <div className="mb-4">
                   <p className="text-xs text-gray-400 mb-2">Set Expected Delivery Date</p>
                   <input
@@ -342,10 +293,8 @@ export default function GiftingDetail() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-300"
                   />
                 </div>
-
-                {/* Update Button */}
                 <button
-                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90"
+                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
                   style={{ backgroundColor: '#068BC9' }}>
                   Update
                 </button>
@@ -356,16 +305,16 @@ export default function GiftingDetail() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Timeline</h3>
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: 'Request Created', date: detail.createdAt, done: true },
-                    { label: 'Quotation Uploaded', date: '2026-07-03', done: true },
-                    { label: 'Quotation Accepted', date: '', done: false },
-                    { label: 'Delivered', date: '', done: false },
-                  ].map((step, i) => (
+                    { label: 'Request Created', date: detail.createdAt ? detail.createdAt.split('T')[0] : '', done: true },
+                    { label: 'Quotation Uploaded', date: quotations.length > 0 ? quotations[quotations.length - 1].createdAt?.split('T')[0] : '', done: quotations.length > 0 },
+                    { label: 'Quotation Accepted', date: '', done: detail.quotationStatus === 'accepted' },
+                    { label: 'Delivered', date: detail.deliveryDate ? detail.deliveryDate.split('T')[0] : '', done: !!detail.deliveryDate },
+                  ].map((step, i, arr) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0"
                           style={{ backgroundColor: step.done ? '#068BC9' : '#e5e7eb' }} />
-                        {i < 3 && <div className="w-0.5 h-6" style={{ backgroundColor: '#e5e7eb' }} />}
+                        {i < arr.length - 1 && <div className="w-0.5 h-6" style={{ backgroundColor: '#e5e7eb' }} />}
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-600">{step.label}</p>
