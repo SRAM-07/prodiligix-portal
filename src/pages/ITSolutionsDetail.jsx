@@ -1,26 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import {
-  MdArrowBack, MdComputer, MdPerson, MdClose
-} from 'react-icons/md';
-
-const ticketDetail = {
-  id: 'ITS-20260701001',
-  company: 'Rapido Technologies Pvt. Ltd.',
-  contactPerson: 'Arun Kumar',
-  email: 'arun.kumar@rapido.bike',
-  phone: '+91 98765 43210',
-  serviceType: 'Hardware Setup',
-  description: 'Setup 25 laptops with OS and software installation for the new Bangalore office. Includes Windows 11 Pro installation, antivirus setup, and basic software configuration.',
-  priority: 'High',
-  assignedTo: 'Tech Partner A',
-  createdDate: '2026-07-01',
-  expectedResolution: '2026-07-05',
-  actualResolution: '2026-07-04',
-  status: 'Resolved',
-  adminNotes: 'All 25 laptops configured successfully. Delivered to client on 4th July.',
-};
+import { MdArrowBack, MdComputer, MdPerson, MdClose } from 'react-icons/md';
+import api from '../services/api';
 
 const statusOptions = ['Pending', 'In Progress', 'Resolved', 'Cancelled'];
 
@@ -48,26 +30,80 @@ function InfoRow({ label, value }) {
 
 export default function ITSolutionsDetail() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [status, setStatus] = useState(ticketDetail.status);
-  const [assignedTo, setAssignedTo] = useState(ticketDetail.assignedTo);
-  const [expectedResolution, setExpectedResolution] = useState(ticketDetail.expectedResolution);
-  const [actualResolution, setActualResolution] = useState(ticketDetail.actualResolution);
-  const [adminNotes, setAdminNotes] = useState(ticketDetail.adminNotes);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  const s = statusConfig[status] || statusConfig['Pending'];
-  const p = priorityConfig[ticketDetail.priority] || priorityConfig['Medium'];
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const response = await api.get(`/api/it-solutions/${id}`);
+        setDetail(response.data);
+        setStatus(response.data.status);
+        setAssignedTo(response.data.assignedTo || '');
+        setAdminNotes(response.data.adminNotes || '');
+      } catch (error) {
+        console.error('Failed to fetch IT solution detail:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
+
+  const handleUpdate = async () => {
+    try {
+      setUpdating(true);
+      const response = await api.put(`/api/it-solutions/${id}`, {
+        status,
+        assignedTo,
+        adminNotes,
+      });
+      setDetail(response.data);
+      alert('Updated successfully!');
+    } catch (error) {
+      console.error('Failed to update:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!cancelReason.trim()) return;
+    try {
+      const response = await api.patch(`/api/it-solutions/${id}/cancel`, { reason: cancelReason });
+      setDetail(response.data);
+      setStatus('Cancelled');
+      setShowCancelModal(false);
+      setCancelReason('');
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to cancel');
+    }
+  };
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading...</p>
+    </div>
+  );
+
+  if (!detail) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Request not found</p>
+    </div>
+  );
+
   const isCancelled = status === 'Cancelled';
   const isResolved = status === 'Resolved';
-
-  const handleCancelSubmit = () => {
-    if (!cancelReason.trim()) return;
-    setStatus('Cancelled');
-    setShowCancelModal(false);
-    setCancelReason('');
-  };
+  const s = statusConfig[status] || statusConfig['Pending'];
+  const p = priorityConfig[detail.priority] || priorityConfig['Medium'];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -87,13 +123,13 @@ export default function ITSolutionsDetail() {
             </button>
             <div>
               <p className="text-gray-400 text-xs">IT Solutions</p>
-              <h1 className="text-base font-bold text-gray-800">{ticketDetail.id}</h1>
+              <h1 className="text-base font-bold text-gray-800">{detail.serviceRequestId}</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full"
               style={{ color: p.color, backgroundColor: p.bg }}>
-              {ticketDetail.priority} Priority
+              {detail.priority} Priority
             </span>
             <span className="text-xs font-semibold px-3 py-1 rounded-full"
               style={{ color: s.color, backgroundColor: s.bg }}>
@@ -107,10 +143,10 @@ export default function ITSolutionsDetail() {
           {/* Summary Cards */}
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: 'Company', value: ticketDetail.company },
-              { label: 'Service Type', value: ticketDetail.serviceType },
-              { label: 'Created Date', value: ticketDetail.createdDate },
-              { label: 'Expected Resolution', value: ticketDetail.expectedResolution },
+              { label: 'Service Type', value: detail.serviceType },
+              { label: 'Priority', value: detail.priority },
+              { label: 'Created Date', value: detail.createdAt ? detail.createdAt.split('T')[0] : '—' },
+              { label: 'Assigned To', value: detail.assignedTo || 'Unassigned' },
             ].map((card, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <p className="text-xs text-gray-400 mb-1">{card.label}</p>
@@ -121,7 +157,7 @@ export default function ITSolutionsDetail() {
 
           <div className="grid grid-cols-3 gap-5">
 
-            {/* Left — Ticket Details */}
+            {/* Left */}
             <div className="col-span-2 flex flex-col gap-5">
 
               {/* Contact Info */}
@@ -131,10 +167,9 @@ export default function ITSolutionsDetail() {
                   <h3 className="text-sm font-semibold text-gray-700">Contact Information</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <InfoRow label="Company Name" value={ticketDetail.company} />
-                  <InfoRow label="Contact Person" value={ticketDetail.contactPerson} />
-                  <InfoRow label="Email" value={ticketDetail.email} />
-                  <InfoRow label="Phone" value={ticketDetail.phone} />
+                  <InfoRow label="Contact Person" value={detail.contactPersonName} />
+                  <InfoRow label="Email" value={detail.email} />
+                  <InfoRow label="Phone" value={detail.primaryPhone} />
                 </div>
               </div>
 
@@ -145,19 +180,20 @@ export default function ITSolutionsDetail() {
                   <h3 className="text-sm font-semibold text-gray-700">Ticket Details</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <InfoRow label="Service Type" value={ticketDetail.serviceType} />
-                  <InfoRow label="Priority" value={ticketDetail.priority} />
-                  <InfoRow label="Assigned To" value={ticketDetail.assignedTo} />
-                  <InfoRow label="Created Date" value={ticketDetail.createdDate} />
-                  <InfoRow label="Expected Resolution" value={ticketDetail.expectedResolution} />
-                  <InfoRow label="Actual Resolution" value={ticketDetail.actualResolution || 'Pending'} />
+                  <InfoRow label="Service Type" value={detail.serviceType} />
+                  <InfoRow label="Priority" value={detail.priority} />
+                  <InfoRow label="Assigned To" value={detail.assignedTo || 'Unassigned'} />
+                  <InfoRow label="Created Date" value={detail.createdAt ? detail.createdAt.split('T')[0] : '—'} />
+                  <InfoRow label="Expected Resolution" value={detail.expectedResolutionDate ? detail.expectedResolutionDate.split('T')[0] : '—'} />
+                  <InfoRow label="Actual Resolution" value={detail.actualResolutionDate ? detail.actualResolutionDate.split('T')[0] : 'Pending'} />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Description</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{ticketDetail.description}</p>
-                </div>
+                {detail.description && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Description</p>
+                    <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{detail.description}</p>
+                  </div>
+                )}
               </div>
-
             </div>
 
             {/* Right — Admin Panel */}
@@ -167,7 +203,6 @@ export default function ITSolutionsDetail() {
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
 
-                {/* Status */}
                 <div className="mb-4">
                   <p className="text-xs text-gray-400 mb-1">Status</p>
                   <select
@@ -181,7 +216,6 @@ export default function ITSolutionsDetail() {
                   </select>
                 </div>
 
-                {/* Assigned To */}
                 <div className="mb-4">
                   <p className="text-xs text-gray-400 mb-1">Assigned To</p>
                   <input
@@ -192,31 +226,6 @@ export default function ITSolutionsDetail() {
                   />
                 </div>
 
-                {/* Expected Resolution */}
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-1">Expected Resolution Date</p>
-                  <input
-                    type="date"
-                    value={expectedResolution}
-                    onChange={e => setExpectedResolution(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none"
-                  />
-                </div>
-
-                {/* Actual Resolution — show when resolved */}
-                {isResolved && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-1">Actual Resolution Date</p>
-                    <input
-                      type="date"
-                      value={actualResolution}
-                      onChange={e => setActualResolution(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none"
-                    />
-                  </div>
-                )}
-
-                {/* Admin Notes */}
                 <div className="mb-4">
                   <p className="text-xs text-gray-400 mb-1">Admin Notes</p>
                   <textarea
@@ -229,10 +238,11 @@ export default function ITSolutionsDetail() {
                 </div>
 
                 <button
-                  disabled={isCancelled}
-                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
+                  onClick={handleUpdate}
+                  disabled={isCancelled || updating}
+                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-40"
                   style={{ backgroundColor: '#068BC9' }}>
-                  Update
+                  {updating ? 'Updating...' : 'Update'}
                 </button>
               </div>
 
@@ -241,18 +251,16 @@ export default function ITSolutionsDetail() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Timeline</h3>
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: 'Ticket Created', date: ticketDetail.createdDate, done: true },
-                    { label: 'Assigned to Tech Partner', date: ticketDetail.createdDate, done: true },
-                    { label: 'In Progress', date: '2026-07-02', done: true },
-                    { label: 'Resolved', date: ticketDetail.actualResolution, done: !!ticketDetail.actualResolution },
+                    { label: 'Ticket Created', date: detail.createdAt ? detail.createdAt.split('T')[0] : '', done: true },
+                    { label: 'Assigned', date: '', done: !!detail.assignedTo },
+                    { label: 'In Progress', date: '', done: ['In Progress', 'Resolved'].includes(status) },
+                    { label: 'Resolved', date: detail.actualResolutionDate ? detail.actualResolutionDate.split('T')[0] : '', done: isResolved },
                   ].map((step, i, arr) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0"
                           style={{ backgroundColor: step.done ? '#068BC9' : '#e5e7eb' }} />
-                        {i < arr.length - 1 && (
-                          <div className="w-0.5 h-6" style={{ backgroundColor: '#e5e7eb' }} />
-                        )}
+                        {i < arr.length - 1 && <div className="w-0.5 h-6" style={{ backgroundColor: '#e5e7eb' }} />}
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-600">{step.label}</p>
@@ -271,7 +279,6 @@ export default function ITSolutionsDetail() {
                   Cancel Ticket
                 </button>
               )}
-
             </div>
           </div>
         </div>
@@ -304,7 +311,7 @@ export default function ITSolutionsDetail() {
               <button
                 onClick={handleCancelSubmit}
                 disabled={!cancelReason.trim()}
-                className="flex-1 py-2 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="flex-1 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-40"
                 style={{ backgroundColor: '#ef4444' }}>
                 Submit
               </button>
@@ -312,7 +319,6 @@ export default function ITSolutionsDetail() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -1,80 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdAdd } from 'react-icons/md';
+import api from '../services/api';
 
-const itData = [
-  {
-    id: 'ITS-20260701001',
-    company: 'Rapido Technologies Pvt. Ltd.',
-    contactPerson: 'Arun Kumar',
-    serviceType: 'Hardware Setup',
-    description: 'Setup 25 laptops with OS and software installation',
-    priority: 'High',
-    assignedTo: 'Tech Partner A',
-    createdDate: '2026-07-01',
-    expectedResolution: '2026-07-05',
-    actualResolution: '2026-07-04',
-    status: 'Resolved',
-  },
-  {
-    id: 'ITS-20260701002',
-    company: 'Coca-Cola India Pvt. Ltd.',
-    contactPerson: 'Meera Nair',
-    serviceType: 'Network Setup',
-    description: 'Configure office WiFi and LAN for new floor',
-    priority: 'Medium',
-    assignedTo: 'Tech Partner B',
-    createdDate: '2026-07-02',
-    expectedResolution: '2026-07-08',
-    actualResolution: '',
-    status: 'In Progress',
-  },
-  {
-    id: 'ITS-20260701003',
-    company: 'Infosys Limited',
-    contactPerson: 'Suresh Babu',
-    serviceType: 'Software Procurement',
-    description: 'Procure 100 Microsoft Office licenses',
-    priority: 'Low',
-    assignedTo: 'Tech Partner A',
-    createdDate: '2026-07-03',
-    expectedResolution: '2026-07-10',
-    actualResolution: '',
-    status: 'Pending',
-  },
-  {
-    id: 'ITS-20260701004',
-    company: 'Wipro Technologies',
-    contactPerson: 'Divya Rao',
-    serviceType: 'IT Support',
-    description: 'Monthly IT support contract for 200 employees',
-    priority: 'High',
-    assignedTo: 'Tech Partner C',
-    createdDate: '2026-07-04',
-    expectedResolution: '2026-07-31',
-    actualResolution: '',
-    status: 'In Progress',
-  },
-  {
-    id: 'ITS-20260701005',
-    company: 'HCL Technologies',
-    contactPerson: 'Ramesh Iyer',
-    serviceType: 'CCTV Installation',
-    description: 'Install 20 CCTV cameras across 3 floors',
-    priority: 'Medium',
-    assignedTo: 'Tech Partner B',
-    createdDate: '2026-07-05',
-    expectedResolution: '2026-07-12',
-    actualResolution: '2026-07-11',
-    status: 'Resolved',
-  },
-];
+const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
 const statusConfig = {
-  'Resolved': { color: '#22c55e', bg: '#dcfce7' },
-  'In Progress': { color: '#3b82f6', bg: '#eff6ff' },
   'Pending': { color: '#f97316', bg: '#ffedd5' },
+  'In Progress': { color: '#3b82f6', bg: '#eff6ff' },
+  'Resolved': { color: '#22c55e', bg: '#dcfce7' },
   'Cancelled': { color: '#ef4444', bg: '#fee2e2' },
 };
 
@@ -84,19 +19,39 @@ const priorityConfig = {
   'Low': { color: '#22c55e', bg: '#dcfce7' },
 };
 
-const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Priority', 'Company', 'Reset / Show All'];
-
 export default function ITSolutions() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [searchText, setSearchText] = useState('');
+  const [itData, setItData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchITSolutions = async () => {
+      try {
+        const response = await api.get('/api/it-solutions');
+        setItData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch IT solutions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchITSolutions();
+  }, []);
+
   const filtered = itData.filter(o =>
-    o.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    o.company.toLowerCase().includes(searchText.toLowerCase()) ||
-    o.serviceType.toLowerCase().includes(searchText.toLowerCase())
+    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (o.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (o.serviceType || '').toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading...</p>
+    </div>
   );
 
   return (
@@ -113,20 +68,18 @@ export default function ITSolutions() {
             <p className="text-gray-400 text-xs">Services</p>
             <h1 className="text-base font-bold text-gray-800">IT Solutions</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-              <MdSearch size={16} className="text-gray-400"/>
-              <input
-                type="text"
-                placeholder="Search by ID, Company or Service..."
-                value={searchText}
-                onChange={e => setSearchText(e.target.value)}
-                className="bg-transparent text-sm outline-none w-56 text-gray-600"
-              />
-              {searchText && (
-                <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setSearchText('')}/>
-              )}
-            </div>
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+            <MdSearch size={16} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by ID or Service Type..."
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              className="bg-transparent text-sm outline-none w-56 text-gray-600"
+            />
+            {searchText && (
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setSearchText('')} />
+            )}
           </div>
         </div>
 
@@ -134,28 +87,17 @@ export default function ITSolutions() {
 
           {/* Stats */}
           <div className="grid grid-cols-4 gap-4 mb-5">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Total Tickets</p>
-              <p className="text-2xl font-bold text-gray-800">{itData.length}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Resolved</p>
-              <p className="text-2xl font-bold" style={{ color: '#22c55e' }}>
-                {itData.filter(i => i.status === 'Resolved').length}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">In Progress</p>
-              <p className="text-2xl font-bold" style={{ color: '#3b82f6' }}>
-                {itData.filter(i => i.status === 'In Progress').length}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Pending</p>
-              <p className="text-2xl font-bold" style={{ color: '#f97316' }}>
-                {itData.filter(i => i.status === 'Pending').length}
-              </p>
-            </div>
+            {[
+              { label: 'Total Requests', value: itData.length, color: '#068BC9' },
+              { label: 'Resolved', value: itData.filter(o => o.status === 'Resolved').length, color: '#22c55e' },
+              { label: 'In Progress', value: itData.filter(o => o.status === 'In Progress').length, color: '#3b82f6' },
+              { label: 'Pending', value: itData.filter(o => o.status === 'Pending').length, color: '#f97316' },
+            ].map((card, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                <p className="text-xs text-gray-400 mb-1">{card.label}</p>
+                <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
+              </div>
+            ))}
           </div>
 
           {/* Filter bar */}
@@ -165,7 +107,7 @@ export default function ITSolutions() {
                 onClick={() => setShowFilter(!showFilter)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
                 style={{ backgroundColor: '#068BC9' }}>
-                <MdFilterList size={18}/>
+                <MdFilterList size={18} />
                 Add Filter
                 <span className="ml-1">{showFilter ? '▲' : '▼'}</span>
               </button>
@@ -189,25 +131,22 @@ export default function ITSolutions() {
               <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
                 {activeFilter}: {filtered.length}
               </span>
-              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')}/>
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')} />
             </div>
 
             <span className="text-sm text-gray-500">({filtered.length})</span>
 
             <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-              <MdRefresh size={18} className="text-gray-400"/>
+              <MdRefresh size={18} className="text-gray-400" />
             </button>
 
-            <div className="ml-auto">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-                <MdSearch size={14} className="text-gray-400"/>
-                <input
-                  type="text"
-                  placeholder="Service Request ID or Company Name"
-                  className="bg-transparent text-xs outline-none w-52 text-gray-500"
-                />
-              </div>
-            </div>
+            <button
+              onClick={() => navigate('/it-solutions/new')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
+              style={{ backgroundColor: '#22c55e' }}>
+              <MdAdd size={18} />
+              New Request
+            </button>
           </div>
 
           {/* Table */}
@@ -215,63 +154,67 @@ export default function ITSolutions() {
             <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Ticket ID</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Company Name</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Contact Person</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Service Type</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Description</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Priority</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Assigned To</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Created Date</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Expected Resolution</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Actual Resolution</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">Actions</th>
+                  {[
+                    'Service Request ID', 'Contact Person', 'Email',
+                    'Service Type', 'Priority', 'Assigned To',
+                    'Status', 'Created Date', 'Actions'
+                  ].map((col, i) => (
+                    <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((ticket, i) => {
-                  const s = statusConfig[ticket.status] || statusConfig['Pending'];
-                  const p = priorityConfig[ticket.priority] || priorityConfig['Medium'];
-                  return (
-                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium whitespace-nowrap cursor-pointer hover:underline"
-                        style={{ color: '#068BC9' }}
-                        onClick={() => navigate('/it-solutions/detail')}>
-                        {ticket.id}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.company}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.contactPerson}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.serviceType}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{ticket.description}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{ color: p.color, backgroundColor: p.bg }}>
-                          {ticket.priority}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.assignedTo}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.createdDate}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.expectedResolution}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{ticket.actualResolution || '—'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{ color: s.color, backgroundColor: s.bg }}>
-                          {ticket.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <button
-                          onClick={() => navigate('/it-solutions/detail')}
-                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                          style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
-                          <MdVisibility size={14}/>
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-10 text-gray-400 text-sm">
+                      No IT solution requests found
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((order, i) => {
+                    const s = statusConfig[order.status] || { color: '#9ca3af', bg: '#f3f4f6' };
+                    const p = priorityConfig[order.priority] || { color: '#9ca3af', bg: '#f3f4f6' };
+                    return (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap cursor-pointer hover:underline"
+                          style={{ color: '#068BC9' }}
+                          onClick={() => navigate(`/it-solutions/${order.id}`)}>
+                          {order.serviceRequestId}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.contactPersonName}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.email}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.serviceType}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={{ color: p.color, backgroundColor: p.bg }}>
+                            {order.priority}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.assignedTo || '—'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={{ color: s.color, backgroundColor: s.bg }}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.createdAt ? order.createdAt.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <button
+                            onClick={() => navigate(`/it-solutions/${order.id}`)}
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                            style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                            <MdVisibility size={14} />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
