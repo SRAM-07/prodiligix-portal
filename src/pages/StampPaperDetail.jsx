@@ -1,32 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { MdArrowBack, MdDownload, MdAttachFile, MdPerson, MdDescription, MdAdminPanelSettings, MdUpload, MdClose } from 'react-icons/md';
+import api from '../services/api';
 
-const detail = {
-  id: 'STMP-20260703001',
-  firstPartyName: 'Roppen Transportation Services Private Limited',
-  firstPartyPan: '',
-  secondPartyName: 'SWAI Technologies Private Limited',
-  secondPartyPan: '',
-  considerationValue: 0,
-  denomination: 500,
-  description: 'Addendum Agreement\nArticle - 5j',
-  stampDutyPaidBy: 'First Party',
-  quantity: 1,
-  procurementCharges: 50,
-  gstFee: 9,
-  totalCharges: 559,
-  requestDate: '2026-07-03',
-  deliveryDate: '',
-  status: 'Booked',
-  scannedCopyUrl: null,
-  scannedCopyName: null,
-};
-
+const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
 const statusOptions = ['Booked', 'In Printing', 'In Transit', 'Delivered'];
 
 const statusConfig = {
+  'Pending': { color: '#f97316', bg: '#ffedd5' },
   'Booked': { color: '#068BC9', bg: '#e0f2fe' },
   'In Printing': { color: '#8b5cf6', bg: '#ede9fe' },
   'In Transit': { color: '#f97316', bg: '#ffedd5' },
@@ -36,24 +18,78 @@ const statusConfig = {
 
 export default function StampPaperDetail() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [status, setStatus] = useState(detail.status);
-  const [deliveryDate, setDeliveryDate] = useState(detail.deliveryDate);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const response = await api.get(`/api/stamp-paper/${id}`);
+        setDetail(response.data);
+        setStatus(response.data.status);
+        setDeliveryDate(response.data.deliveryDate ? response.data.deliveryDate.split('T')[0] : '');
+      } catch (error) {
+        console.error('Failed to fetch stamp paper detail:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
+
+  const handleUpdateStatus = async () => {
+    try {
+      setUpdating(true);
+      const response = await api.patch(`/api/stamp-paper/${id}/status`, { status });
+      setDetail(response.data);
+      setStatus(response.data.status);
+      alert('Status updated successfully!');
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      alert('Failed to update status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!cancelReason.trim()) return;
+    try {
+      const response = await api.patch(`/api/stamp-paper/${id}/cancel`, { reason: cancelReason });
+      setDetail(response.data);
+      setStatus('Cancelled');
+      setShowCancelModal(false);
+      setCancelReason('');
+    } catch (error) {
+      console.error('Failed to cancel:', error);
+      alert('Failed to cancel booking');
+    }
+  };
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading...</p>
+    </div>
+  );
+
+  if (!detail) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Stamp paper booking not found</p>
+    </div>
+  );
 
   const isCancelled = status === 'Cancelled';
-  const isBooked = status === 'Booked';
+  const isBooked = status === 'Booked' || status === 'Pending';
   const isDelivered = status === 'Delivered';
-  const s = statusConfig[status] || statusConfig['Booked'];
-
-  const handleCancelSubmit = () => {
-    if (!cancelReason.trim()) return;
-    setStatus('Cancelled');
-    setShowCancelModal(false);
-    setCancelReason('');
-  };
+  const s = statusConfig[status] || statusConfig['Pending'];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -72,7 +108,7 @@ export default function StampPaperDetail() {
           </button>
           <div className="flex-1">
             <p className="text-gray-400 text-xs">Stamp Paper Procurement</p>
-            <h1 className="text-base font-bold text-gray-800">{detail.id}</h1>
+            <h1 className="text-base font-bold text-gray-800">{detail.serviceRequestId}</h1>
           </div>
           <span className="text-xs font-medium px-3 py-1.5 rounded-full"
             style={{ color: s.color, backgroundColor: s.bg }}>
@@ -101,7 +137,9 @@ export default function StampPaperDetail() {
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-400 mb-1">Request Date</p>
-              <p className="text-xl font-bold text-gray-800">{detail.requestDate}</p>
+              <p className="text-xl font-bold text-gray-800">
+                {detail.createdAt ? detail.createdAt.split('T')[0] : '—'}
+              </p>
             </div>
           </div>
 
@@ -111,20 +149,33 @@ export default function StampPaperDetail() {
               <MdPerson size={18} style={{ color: '#068BC9' }} />
               <p className="text-sm font-semibold text-gray-700">Party Details</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'First Party Name *', value: detail.firstPartyName },
-                { label: 'First Party PAN Number', value: detail.firstPartyPan || 'Not provided' },
-                { label: 'Second Party Name *', value: detail.secondPartyName },
-                { label: 'Second Party PAN Number', value: detail.secondPartyPan || 'Not provided' },
-              ].map((f, i) => (
-                <div key={i}>
-                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                    <span className="text-sm text-gray-700">{f.value}</span>
-                  </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">First Party Name</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">{detail.firstPartyName || '—'}</span>
                 </div>
-              ))}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">First Party PAN Number</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">{detail.firstPartyPan || 'Not provided'}</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Second Party Name</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">{detail.secondPartyName || '—'}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Second Party PAN Number</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">{detail.secondPartyPan || 'Not provided'}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -135,34 +186,35 @@ export default function StampPaperDetail() {
               <p className="text-sm font-semibold text-gray-700">Stamp Paper Details</p>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
-              {[
-                { label: 'Consideration Value *', value: `₹${detail.considerationValue}` },
-                { label: 'Denomination of Stamp Paper *', value: `₹${detail.denomination}` },
-              ].map((f, i) => (
-                <div key={i}>
-                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                    <span className="text-sm text-gray-700">{f.value}</span>
-                  </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Consideration Value</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">₹{detail.considerationValue || 0}</span>
                 </div>
-              ))}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Denomination of Stamp Paper</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-gray-700">₹{detail.denomination}</span>
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Description of Stamp Paper *</p>
+                <p className="text-xs text-gray-400 mb-1">Description</p>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 min-h-20">
-                  <span className="text-sm text-gray-700 whitespace-pre-line">{detail.description}</span>
+                  <span className="text-sm text-gray-700 whitespace-pre-line">{detail.description || '—'}</span>
                 </div>
               </div>
               <div className="flex flex-col gap-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Stamp Duty Paid By *</p>
+                  <p className="text-xs text-gray-400 mb-1">Stamp Duty Paid By</p>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                    <span className="text-sm text-gray-700">{detail.stampDutyPaidBy}</span>
+                    <span className="text-sm text-gray-700">{detail.stampDutyPaidBy || '—'}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Quantity of Stamp Paper *</p>
+                  <p className="text-xs text-gray-400 mb-1">Quantity</p>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
                     <span className="text-sm text-gray-700">{detail.quantity}</span>
                   </div>
@@ -181,14 +233,17 @@ export default function StampPaperDetail() {
             {/* Charges */}
             <div className="grid grid-cols-3 gap-4 mb-4">
               {[
-                { label: 'Procurement Charges *', value: `₹${detail.procurementCharges}` },
-                { label: 'GST on Procurement Fee *', value: `₹${detail.gstFee}` },
-                { label: 'Total Charges *', value: `₹${detail.totalCharges}`, highlight: true },
+                { label: 'Procurement Charges', value: `₹${detail.procurementCharges || 0}` },
+                { label: 'GST on Procurement Fee', value: `₹${detail.gstFee || 0}` },
+                { label: 'Total Charges', value: `₹${detail.totalCharges || 0}`, highlight: true },
               ].map((f, i) => (
                 <div key={i}>
                   <p className="text-xs text-gray-400 mb-1">{f.label}</p>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                    <span className="text-sm font-semibold" style={{ color: f.highlight ? '#068BC9' : '#374151' }}>{f.value}</span>
+                    <span className="text-sm font-semibold"
+                      style={{ color: f.highlight ? '#068BC9' : '#374151' }}>
+                      {f.value}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -197,7 +252,7 @@ export default function StampPaperDetail() {
             {/* Status + Delivery Date */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Status *</p>
+                <p className="text-xs text-gray-400 mb-1">Status</p>
                 <select
                   value={status}
                   onChange={e => setStatus(e.target.value)}
@@ -210,7 +265,7 @@ export default function StampPaperDetail() {
               </div>
               {isDelivered && (
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Delivery Date *</p>
+                  <p className="text-xs text-gray-400 mb-1">Delivery Date</p>
                   <input
                     type="date"
                     value={deliveryDate}
@@ -224,19 +279,21 @@ export default function StampPaperDetail() {
             {/* Upload Stamp Paper */}
             <div className="mb-4">
               <p className="text-xs text-gray-400 mb-1">Upload Stamp Paper (PDF)</p>
-              {detail.scannedCopyUrl ? (
+              {detail.scannedCopy ? (
                 <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
                   <div className="flex items-center gap-2">
                     <MdAttachFile size={16} style={{ color: '#068BC9' }} />
-                    <span className="text-sm text-gray-600 truncate">{detail.scannedCopyName || 'Document.pdf'}</span>
+                    <span className="text-sm text-gray-600 truncate">Document.pdf</span>
                   </div>
-                  <button className="p-1 rounded hover:bg-gray-100">
+                  <button
+                    onClick={() => window.open(detail.scannedCopy, '_blank')}
+                    className="p-1 rounded hover:bg-gray-100">
                     <MdDownload size={16} style={{ color: '#068BC9' }} />
                   </button>
                 </div>
               ) : (
                 <div>
-                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
                     <MdUpload size={18} style={{ color: '#068BC9' }} />
                     <span className="text-sm text-gray-500">
                       {uploadFile ? uploadFile.name : 'Click to upload PDF'}
@@ -280,9 +337,11 @@ export default function StampPaperDetail() {
               </button>
               {!isCancelled && (
                 <button
-                  className="px-6 py-2.5 rounded-lg text-sm text-white font-medium transition-opacity hover:opacity-90"
+                  onClick={handleUpdateStatus}
+                  disabled={updating}
+                  className="px-6 py-2.5 rounded-lg text-sm text-white font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ backgroundColor: '#068BC9' }}>
-                  Update
+                  {updating ? 'Updating...' : 'Update'}
                 </button>
               )}
             </div>

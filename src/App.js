@@ -31,9 +31,9 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/logistics" element={<Logistics />} />
-        <Route path="/logistics/:id*" element={<OrderDetail />} />
+        <Route path="/logistics/:id/*" element={<OrderDetail />} />
         <Route path="/stamp-paper" element={<StampPaper />} />
-        <Route path="/stamp-paper/detail" element={<StampPaperDetail />} />
+        <Route path="/stamp-paper/:id" element={<StampPaperDetail />} />
         <Route path="/gifting" element={<CorporateGifting />} />
         <Route path="/events" element={<Events />} />
         <Route path="/it-solutions" element={<ITSolutions />} />
