@@ -1,123 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdDownload, MdExpandMore } from 'react-icons/md';
-
-const logisticsData = [
-  {
-    id: 'LOG-20260701001',
-    company: 'Rapido Technologies Pvt. Ltd.',
-    pickupFacility: 'Rapido HQ - Bangalore',
-    deliveryFacility: 'Rapido Warehouse - Mumbai',
-    senderPhone: '+91 98765 43210',
-    receiverPhone: '+91 87654 32109',
-    transportMode: 'Surface',
-    shipmentDetail: 'Electronics',
-    declaredValue: '₹45,000',
-    challanNo: 'CH-2026001',
-    boxes: 3,
-    rateType: 'Volumetric',
-    finalRate: '₹1,250',
-    awb: 'AWB123456789',
-    deliveryPartner: 'Delhivery',
-    status: 'In Transit',
-    createdDate: '2026-07-01',
-    deliveryDate: '',
-    expectedDelivery: '2026-07-08',
-    requestApproved: true,
-    invoiceCopy: '#',
-    ewayBill: '#',
-    shipmentLabel: '#',
-    podCopy: null,
-    manifest: null,
-  },
-  {
-    id: 'LOG-20260701002',
-    company: 'Rapido Technologies Pvt. Ltd.',
-    pickupFacility: 'Rapido HQ - Bangalore',
-    deliveryFacility: 'Rapido Office - Delhi',
-    senderPhone: '+91 98765 43210',
-    receiverPhone: '+91 76543 21098',
-    transportMode: 'Air',
-    shipmentDetail: 'Documents',
-    declaredValue: '₹5,000',
-    challanNo: 'CH-2026002',
-    boxes: 1,
-    rateType: 'Actual',
-    finalRate: '₹850',
-    awb: 'AWB987654321',
-    deliveryPartner: 'Bluedart',
-    status: 'Delivered',
-    createdDate: '2026-07-02',
-    deliveryDate: '2026-07-05',
-    expectedDelivery: '2026-07-06',
-    requestApproved: true,
-    invoiceCopy: '#',
-    ewayBill: null,
-    shipmentLabel: '#',
-    podCopy: '#',
-    manifest: '#',
-  },
-  {
-    id: 'LOG-20260701003',
-    company: 'Rapido Technologies Pvt. Ltd.',
-    pickupFacility: 'Rapido Warehouse - Chennai',
-    deliveryFacility: 'Rapido Office - Hyderabad',
-    senderPhone: '+91 87654 32109',
-    receiverPhone: '+91 65432 10987',
-    transportMode: 'Surface',
-    shipmentDetail: 'Spare Parts',
-    declaredValue: '₹12,000',
-    challanNo: 'CH-2026003',
-    boxes: 5,
-    rateType: 'Volumetric',
-    finalRate: '₹2,100',
-    awb: '',
-    deliveryPartner: 'Delhivery',
-    status: 'Exception',
-    createdDate: '2026-07-03',
-    deliveryDate: '',
-    expectedDelivery: '2026-07-10',
-    requestApproved: false,
-    invoiceCopy: '#',
-    ewayBill: '#',
-    shipmentLabel: null,
-    podCopy: null,
-    manifest: null,
-  },
-  {
-    id: 'LOG-20260701004',
-    company: 'Rapido Technologies Pvt. Ltd.',
-    pickupFacility: 'Rapido HQ - Bangalore',
-    deliveryFacility: 'Rapido Office - Pune',
-    senderPhone: '+91 98765 43210',
-    receiverPhone: '+91 54321 09876',
-    transportMode: 'Surface',
-    shipmentDetail: 'Office Supplies',
-    declaredValue: '₹8,500',
-    challanNo: 'CH-2026004',
-    boxes: 2,
-    rateType: 'Actual',
-    finalRate: '₹650',
-    awb: 'AWB456789123',
-    deliveryPartner: 'Delhivery',
-    status: 'Booked',
-    createdDate: '2026-07-04',
-    deliveryDate: '',
-    expectedDelivery: '2026-07-12',
-    requestApproved: false,
-    invoiceCopy: null,
-    ewayBill: null,
-    shipmentLabel: null,
-    podCopy: null,
-    manifest: null,
-  },
-];
+import { getCurrentUser } from '../services/authService';
+import api from '../services/api';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
 function getStatusIdColor(row) {
-  const status = row.status ? row.status.toLowerCase() : '';
+  const status = row.deliveryStatus ? row.deliveryStatus.toLowerCase() : '';
   if (status.includes('cancel') || status.includes('exception')) return '#ef4444';
   if (status.includes('delivered')) return '#22c55e';
   if (status.includes('rto')) return '#f97316';
@@ -143,23 +34,46 @@ export default function Logistics() {
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [searchText, setSearchText] = useState('');
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
+  const [logisticsData, setLogisticsData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchShipments = async () => {
+      try {
+        const response = await api.get('/api/shipments');
+        setLogisticsData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch shipments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShipments();
+  }, []);
+
   const filtered = logisticsData.filter(o =>
-    o.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    o.company.toLowerCase().includes(searchText.toLowerCase()) ||
-    (o.awb && o.awb.toLowerCase().includes(searchText.toLowerCase()))
+    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase())
   );
 
   const getAvailableDocs = (row) => {
     const docs = [];
     if (row.invoiceCopy) docs.push({ label: 'Invoice Copy', url: row.invoiceCopy });
     if (row.ewayBill) docs.push({ label: 'E-Way Bill', url: row.ewayBill });
-    if (row.shipmentLabel) docs.push({ label: 'Shipment Label', url: row.shipmentLabel });
+    if (row.shipmentWithLabel) docs.push({ label: 'Shipment Label', url: row.shipmentWithLabel });
     if (row.podCopy) docs.push({ label: 'POD Copy', url: row.podCopy });
     if (row.manifest) docs.push({ label: 'Manifest', url: row.manifest });
     return docs;
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <p className="text-gray-400 text-sm">Loading shipments...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -198,9 +112,9 @@ export default function Logistics() {
           <div className="grid grid-cols-4 gap-4 mb-5">
             {[
               { label: 'Total Orders', value: logisticsData.length, color: '#068BC9' },
-              { label: 'Delivered', value: logisticsData.filter(o => o.status === 'Delivered').length, color: '#22c55e' },
-              { label: 'In Transit', value: logisticsData.filter(o => o.status === 'In Transit').length, color: '#1d4ed8' },
-              { label: 'Exceptions', value: logisticsData.filter(o => o.status === 'Exception').length, color: '#ef4444' },
+              { label: 'Delivered', value: logisticsData.filter(o => o.deliveryStatus === 'Delivered').length, color: '#22c55e' },
+              { label: 'In Transit', value: logisticsData.filter(o => o.deliveryStatus === 'In Transit').length, color: '#1d4ed8' },
+              { label: 'Exceptions', value: logisticsData.filter(o => o.deliveryStatus === 'Exception').length, color: '#ef4444' },
             ].map((card, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                 <p className="text-xs text-gray-400 mb-1">{card.label}</p>
@@ -256,11 +170,10 @@ export default function Logistics() {
               <thead>
                 <tr className="border-b border-gray-100">
                   {[
-                    'Service Request ID', 'Company', 'Pickup Facility', 'Delivery Facility',
-                    'Sender Phone', 'Receiver Phone', 'Transport Mode', 'Shipment Detail',
+                    'Service Request ID', 'Transport Mode', 'Shipment Detail',
                     'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate',
                     'AWB Number', 'Delivery Partner', 'Status',
-                    'Created Date', 'Delivery Date', 'Expected Delivery', 'Actions'
+                    'Created Date', 'Delivery Date', 'Actions'
                   ].map((col, i) => (
                     <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
                       {col}
@@ -269,72 +182,82 @@ export default function Logistics() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((order, i) => {
-                  const s = statusConfig[order.status] || { color: '#9ca3af', bg: '#f3f4f6' };
-                  const docs = getAvailableDocs(order);
-                  const idColor = getStatusIdColor(order);
-                  return (
-                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-bold whitespace-nowrap cursor-pointer hover:underline"
-                        style={{ color: idColor }}
-                        onClick={() => navigate('/logistics/detail')}>
-                        {order.id}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.company}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.pickupFacility}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryFacility}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.senderPhone}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.receiverPhone}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentDetail}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.declaredValue}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.challanNo}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.boxes}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.rateType}</td>
-                      <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>{order.finalRate}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.awb || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryPartner}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{ color: s.color, backgroundColor: s.bg }}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.createdDate}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryDate || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.expectedDelivery}</td>
-                      <td className="px-4 py-3 whitespace-nowrap relative">
-                        {docs.length > 0 ? (
-                          <div className="relative">
-                            <button
-                              onClick={() => setOpenDocDropdown(openDocDropdown === i ? null : i)}
-                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                              style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
-                              <MdDownload size={14} />
-                              Docs
-                              <MdExpandMore size={14} />
-                            </button>
-                            {openDocDropdown === i && (
-                              <div className="absolute right-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2 w-44">
-                                {docs.map((doc, di) => (
-                                <div
-                                  key={di}
-                                    onClick={() => window.open(doc.url, '_blank')}
-                                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-xs text-gray-600 cursor-pointer">
-                                    <MdDownload size={13} style={{ color: '#068BC9' }} />
-                                    {doc.label}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={14} className="text-center py-10 text-gray-400 text-sm">
+                      No shipments found
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((order, i) => {
+                    const s = statusConfig[order.deliveryStatus] || { color: '#9ca3af', bg: '#f3f4f6' };
+                    const docs = getAvailableDocs(order);
+                    const idColor = getStatusIdColor(order);
+                    return (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-bold whitespace-nowrap cursor-pointer hover:underline"
+                          style={{ color: idColor }}
+                          onClick={() => navigate(`/logistics/${order.id}`)}>
+                          {order.serviceRequestId}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentDetails || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.shipmentDeclaredValue ? `₹${order.shipmentDeclaredValue}` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryChallanNumber || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.boxQuantity || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.rateType || '—'}</td>
+                        <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>
+                          {order.shipmentRate ? `₹${order.shipmentRate}` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentAwbNumber || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transporter || '—'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={{ color: s.color, backgroundColor: s.bg }}>
+                            {order.deliveryStatus}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.createdAt ? order.createdAt.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.deliveryDate ? order.deliveryDate.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap relative">
+                          {docs.length > 0 ? (
+                            <div className="relative">
+                              <button
+                                onClick={() => setOpenDocDropdown(openDocDropdown === i ? null : i)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                                style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                                <MdDownload size={14} />
+                                Docs
+                                <MdExpandMore size={14} />
+                              </button>
+                              {openDocDropdown === i && (
+                                <div className="absolute right-0 top-9 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2 w-44">
+                                  {docs.map((doc, di) => (
+                                    <div
+                                      key={di}
+                                      onClick={() => window.open(doc.url, '_blank')}
+                                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-xs text-gray-600 cursor-pointer">
+                                      <MdDownload size={13} style={{ color: '#068BC9' }} />
+                                      {doc.label}
+                                    </div>
+                                  ))}
                                 </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">No Docs</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">No Docs</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
