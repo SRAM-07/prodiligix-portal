@@ -1,117 +1,52 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
-import {
-  MdFilterList,
-  MdRefresh,
-  MdSearch,
-  MdClose,
-  MdVisibility,
-  MdAdd,
-} from "react-icons/md";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdAdd } from 'react-icons/md';
+import api from '../services/api';
 
-const eventsData = [
-  {
-    id: "EVT-20260701001",
-    company: "Rapido Technologies Pvt. Ltd.",
-    eventType: "Team Outing",
-    eventDate: "2026-07-20",
-    venue: "Coorg Resort",
-    location: "Coorg, Karnataka",
-    participants: 85,
-    duration: "2 Days",
-    createdDate: "2026-07-01",
-    eventStatus: "In Progress",
-    quotationStatus: "Accepted",
-  },
-  {
-    id: "EVT-20260701002",
-    company: "Coca-Cola India Pvt. Ltd.",
-    eventType: "Corporate Conference",
-    eventDate: "2026-07-25",
-    venue: "Taj Vivanta",
-    location: "Bangalore, Karnataka",
-    participants: 200,
-    duration: "1 Day",
-    createdDate: "2026-07-02",
-    eventStatus: "Under Review",
-    quotationStatus: "Pending",
-  },
-  {
-    id: "EVT-20260701003",
-    company: "Infosys Limited",
-    eventType: "Annual Celebration",
-    eventDate: "2026-08-15",
-    venue: "Kanteerava Stadium",
-    location: "Bangalore, Karnataka",
-    participants: 1200,
-    duration: "1 Day",
-    createdDate: "2026-07-03",
-    eventStatus: "Under Review",
-    quotationStatus: "Pending",
-  },
-  {
-    id: "EVT-20260701004",
-    company: "Wipro Technologies",
-    eventType: "Team Building",
-    eventDate: "2026-07-18",
-    venue: "Della Adventure Park",
-    location: "Pune, Maharashtra",
-    participants: 120,
-    duration: "1 Day",
-    createdDate: "2026-07-04",
-    eventStatus: "Completed",
-    quotationStatus: "Accepted",
-  },
-  {
-    id: "EVT-20260701005",
-    company: "HCL Technologies",
-    eventType: "Product Launch",
-    eventDate: "2026-07-30",
-    venue: "ITC Windsor",
-    location: "Bangalore, Karnataka",
-    participants: 300,
-    duration: "1 Day",
-    createdDate: "2026-07-05",
-    eventStatus: "In Progress",
-    quotationStatus: "Accepted",
-  },
-];
+const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
 const eventStatusConfig = {
-  "In Progress": { color: "#3b82f6", bg: "#eff6ff" },
-  "Under Review": { color: "#f97316", bg: "#ffedd5" },
-  Completed: { color: "#22c55e", bg: "#dcfce7" },
-  Cancelled: { color: "#ef4444", bg: "#fee2e2" },
+  'under_review': { color: '#f97316', bg: '#ffedd5', label: 'Under Review' },
+  'in_progress': { color: '#3b82f6', bg: '#eff6ff', label: 'In Progress' },
+  'completed': { color: '#22c55e', bg: '#dcfce7', label: 'Completed' },
+  'cancelled': { color: '#ef4444', bg: '#fee2e2', label: 'Cancelled' },
+  'closed': { color: '#9ca3af', bg: '#f3f4f6', label: 'Closed' },
 };
-
-const quotationStatusConfig = {
-  Accepted: { color: "#22c55e", bg: "#dcfce7" },
-  Pending: { color: "#f97316", bg: "#ffedd5" },
-  Rejected: { color: "#ef4444", bg: "#fee2e2" },
-};
-
-const filterOptions = [
-  "Latest",
-  "Since Date",
-  "Date Range",
-  "Status",
-  "Company",
-  "Reset / Show All",
-];
 
 export default function Events() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("Latest");
-  const [searchText, setSearchText] = useState("");
+  const [activeFilter, setActiveFilter] = useState('Latest');
+  const [searchText, setSearchText] = useState('');
+  const [eventsData, setEventsData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const filtered = eventsData.filter(
-    (o) =>
-      o.id.toLowerCase().includes(searchText.toLowerCase()) ||
-      o.company.toLowerCase().includes(searchText.toLowerCase()) ||
-      o.eventType.toLowerCase().includes(searchText.toLowerCase()),
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await api.get('/api/events');
+        setEventsData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const filtered = eventsData.filter(o =>
+    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (o.businessName || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (o.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading...</p>
+    </div>
   );
 
   return (
@@ -120,70 +55,44 @@ export default function Events() {
 
       <div
         className="flex-1 transition-all duration-300"
-        style={{ marginLeft: sidebarExpanded ? "240px" : "64px" }}
-      >
+        style={{ marginLeft: sidebarExpanded ? '240px' : '64px' }}>
+
         {/* Topbar */}
         <div className="bg-white border-b border-gray-100 px-6 py-3 flex justify-between items-center sticky top-0 z-40">
           <div>
             <p className="text-gray-400 text-xs">Services</p>
-            <h1 className="text-base font-bold text-gray-800">
-              Event & Team Outing Management
-            </h1>
+            <h1 className="text-base font-bold text-gray-800">Event & Team Outing Management</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-              <MdSearch size={16} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by ID, Company or Event..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="bg-transparent text-sm outline-none w-56 text-gray-600"
-              />
-              {searchText && (
-                <MdClose
-                  size={14}
-                  className="text-gray-400 cursor-pointer"
-                  onClick={() => setSearchText("")}
-                />
-              )}
-            </div>
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+            <MdSearch size={16} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by ID, Company or Person..."
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              className="bg-transparent text-sm outline-none w-56 text-gray-600"
+            />
+            {searchText && (
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setSearchText('')} />
+            )}
           </div>
         </div>
 
         <div className="p-5">
+
           {/* Stats */}
           <div className="grid grid-cols-4 gap-4 mb-5">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Total Events</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {eventsData.length}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Completed</p>
-              <p className="text-2xl font-bold" style={{ color: "#22c55e" }}>
-                {eventsData.filter((e) => e.eventStatus === "Completed").length}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">In Progress</p>
-              <p className="text-2xl font-bold" style={{ color: "#3b82f6" }}>
-                {
-                  eventsData.filter((e) => e.eventStatus === "In Progress")
-                    .length
-                }
-              </p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-400 mb-1">Under Review</p>
-              <p className="text-2xl font-bold" style={{ color: "#f97316" }}>
-                {
-                  eventsData.filter((e) => e.eventStatus === "Under Review")
-                    .length
-                }
-              </p>
-            </div>
+            {[
+              { label: 'Total Requests', value: eventsData.length, color: '#068BC9' },
+              { label: 'In Progress', value: eventsData.filter(e => e.eventStatus === 'in_progress').length, color: '#3b82f6' },
+              { label: 'Under Review', value: eventsData.filter(e => e.eventStatus === 'under_review').length, color: '#f97316' },
+              { label: 'Completed', value: eventsData.filter(e => e.eventStatus === 'completed').length, color: '#22c55e' },
+            ].map((card, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                <p className="text-xs text-gray-400 mb-1">{card.label}</p>
+                <p className="text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
+              </div>
+            ))}
           </div>
 
           {/* Filter bar */}
@@ -192,30 +101,20 @@ export default function Events() {
               <button
                 onClick={() => setShowFilter(!showFilter)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-                style={{ backgroundColor: "#068BC9" }}
-              >
+                style={{ backgroundColor: '#068BC9' }}>
                 <MdFilterList size={18} />
                 Add Filter
-                <span className="ml-1">{showFilter ? "▲" : "▼"}</span>
+                <span className="ml-1">{showFilter ? '▲' : '▼'}</span>
               </button>
               {showFilter && (
                 <div className="absolute top-10 left-0 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2 w-52">
-                  <p className="text-xs text-gray-400 px-4 py-1 font-medium uppercase tracking-wider">
-                    Select Filter Type
-                  </p>
+                  <p className="text-xs text-gray-400 px-4 py-1 font-medium uppercase tracking-wider">Select Filter Type</p>
                   {filterOptions.map((opt, i) => (
                     <div
                       key={i}
-                      onClick={() => {
-                        setActiveFilter(opt);
-                        setShowFilter(false);
-                      }}
+                      onClick={() => { setActiveFilter(opt); setShowFilter(false); }}
                       className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm"
-                      style={{
-                        color:
-                          opt === "Reset / Show All" ? "#ef4444" : "#374151",
-                      }}
-                    >
+                      style={{ color: opt === 'Reset / Show All' ? '#ef4444' : '#374151' }}>
                       {opt}
                     </div>
                   ))}
@@ -224,17 +123,10 @@ export default function Events() {
             </div>
 
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
-              <span
-                className="text-xs font-medium"
-                style={{ color: "#068BC9" }}
-              >
+              <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
                 {activeFilter}: {filtered.length}
               </span>
-              <MdClose
-                size={14}
-                className="text-gray-400 cursor-pointer"
-                onClick={() => setActiveFilter("Latest")}
-              />
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')} />
             </div>
 
             <span className="text-sm text-gray-500">({filtered.length})</span>
@@ -244,24 +136,12 @@ export default function Events() {
             </button>
 
             <button
-              onClick={() => navigate("/events/new")}
+              onClick={() => navigate('/events/new')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-              style={{ backgroundColor: "#22c55e" }}
-            >
+              style={{ backgroundColor: '#22c55e' }}>
               <MdAdd size={18} />
               New Event
             </button>
-
-            <div className="ml-auto">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-                <MdSearch size={14} className="text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Service Request ID or Company Name"
-                  className="bg-transparent text-xs outline-none w-52 text-gray-500"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Table */}
@@ -269,123 +149,68 @@ export default function Events() {
             <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Service Request ID
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Company Name
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Event Type
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Event Date
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Venue
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Location
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Participants
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Duration
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Created Date
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Event Status
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Quotation Status
-                  </th>
-                  <th className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
-                    Actions
-                  </th>
+                  {[
+                    'Service Request ID', 'Company', 'Contact Person',
+                    'Event Type', 'Event Date', 'Location',
+                    'Participants', 'Budget', 'Event Status', 'Actions'
+                  ].map((col, i) => (
+                    <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((event, i) => {
-                  const es =
-                    eventStatusConfig[event.eventStatus] ||
-                    eventStatusConfig["Under Review"];
-                  const qs =
-                    quotationStatusConfig[event.quotationStatus] ||
-                    quotationStatusConfig["Pending"];
-                  return (
-                    <tr
-                      key={i}
-                      className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                    >
-                      <td
-                        className="px-4 py-3 text-sm font-medium whitespace-nowrap cursor-pointer hover:underline"
-                        style={{ color: "#068BC9" }}
-                        onClick={() => navigate("/events/detail")}
-                      >
-                        {event.id}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.company}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.eventType}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.eventDate}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.venue}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.location}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.participants}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.duration}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                        {event.createdDate}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{ color: es.color, backgroundColor: es.bg }}
-                        >
-                          {event.eventStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{ color: qs.color, backgroundColor: qs.bg }}
-                        >
-                          {event.quotationStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <button
-                          onClick={() => navigate("/events/detail")}
-                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                          style={{
-                            color: "#068BC9",
-                            backgroundColor: "#e0f2fe",
-                          }}
-                        >
-                          <MdVisibility size={14} />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="text-center py-10 text-gray-400 text-sm">
+                      No events found
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((event, i) => {
+                    const s = eventStatusConfig[event.eventStatus] || { color: '#9ca3af', bg: '#f3f4f6', label: event.eventStatus };
+                    return (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap cursor-pointer hover:underline"
+                          style={{ color: '#068BC9' }}
+                          onClick={() => navigate(`/events/${event.id}`)}>
+                          {event.serviceRequestId}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.businessName}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.contactPersonName}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.eventType || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {event.eventDate ? event.eventDate.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.location || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.participants || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {event.budget ? `₹${event.budget}` : '—'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={{ color: s.color, backgroundColor: s.bg }}>
+                            {s.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <button
+                            onClick={() => navigate(`/events/${event.id}`)}
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                            style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                            <MdVisibility size={14} />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
+
         </div>
       </div>
     </div>

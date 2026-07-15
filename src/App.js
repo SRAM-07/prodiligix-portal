@@ -45,7 +45,7 @@ function App() {
         <Route path="/client/bulk-upload" element={<BulkUpload />} />
         <Route path="/client/bulk-upload-instructions" element={<BulkUploadInstructions />} />
         <Route path="/gifting/:id" element={<GiftingDetail />} />
-        <Route path="/events/detail" element={<EventsDetail />} />
+        <Route path="/events/:id" element={<EventsDetail />} />
         <Route path="/it-solutions/detail" element={<ITSolutionsDetail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/gifting/new" element={<CorporateGiftingForm />} />
