@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdDownload, MdAdd } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
+
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
 
 const statusConfig = {
   'Pending': { color: '#f97316', bg: '#ffedd5' },
@@ -23,6 +26,9 @@ export default function StampPaper() {
   const [stampData, setStampData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
 
   useEffect(() => {
     const fetchStampPapers = async () => {
@@ -53,7 +59,7 @@ export default function StampPaper() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -137,13 +143,15 @@ export default function StampPaper() {
               <MdRefresh size={18} className="text-gray-400" />
             </button>
 
-            <button
-              onClick={() => navigate('/stamp-paper/new')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-              style={{ backgroundColor: '#22c55e' }}>
-              <MdAdd size={18} />
-              Book A Stamp Paper
-            </button>
+            {!isAdmin && (
+              <button
+                onClick={() => navigate('/stamp-paper/new')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
+                style={{ backgroundColor: '#22c55e' }}>
+                <MdAdd size={18} />
+                Book A Stamp Paper
+              </button>
+            )}
           </div>
 
           {/* Table */}

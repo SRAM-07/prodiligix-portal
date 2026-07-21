@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdAdd } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
+
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
 
 const statusConfig = {
   'Pending': { color: '#f97316', bg: '#ffedd5' },
@@ -27,6 +30,9 @@ export default function ITSolutions() {
   const [itData, setItData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
 
   useEffect(() => {
     const fetchITSolutions = async () => {
@@ -56,7 +62,7 @@ export default function ITSolutions() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -140,13 +146,15 @@ export default function ITSolutions() {
               <MdRefresh size={18} className="text-gray-400" />
             </button>
 
-            <button
-              onClick={() => navigate('/it-solutions/new')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-              style={{ backgroundColor: '#22c55e' }}>
-              <MdAdd size={18} />
-              New Request
-            </button>
+            {!isAdmin && (
+              <button
+                onClick={() => navigate('/it-solutions/new')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
+                style={{ backgroundColor: '#22c55e' }}>
+                <MdAdd size={18} />
+                New Request
+              </button>
+            )}
           </div>
 
           {/* Table */}
@@ -155,9 +163,9 @@ export default function ITSolutions() {
               <thead>
                 <tr className="border-b border-gray-100">
                   {[
-                    'Service Request ID', 'Contact Person', 'Email',
-                    'Service Type', 'Priority', 'Assigned To',
-                    'Status', 'Created Date', 'Actions'
+                    'Service Request ID', 'Contact Person', 'Email', 'Phone',
+                    'Service Type', 'Description', 'Priority', 'Assigned To',
+                    'Status', 'Created Date', 'Expected Resolution', 'Actual Resolution', 'Actions'
                   ].map((col, i) => (
                     <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
                       {col}
@@ -168,7 +176,7 @@ export default function ITSolutions() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-10 text-gray-400 text-sm">
+                    <td colSpan={13} className="text-center py-10 text-gray-400 text-sm">
                       No IT solution requests found
                     </td>
                   </tr>
@@ -185,7 +193,11 @@ export default function ITSolutions() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.contactPersonName}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.email}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.primaryPhone || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.serviceType}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600" style={{ minWidth: '200px', whiteSpace: 'normal' }}>
+                          {order.description || '—'}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="text-xs font-medium px-2 py-1 rounded-full"
                             style={{ color: p.color, backgroundColor: p.bg }}>
@@ -201,6 +213,12 @@ export default function ITSolutions() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {order.createdAt ? order.createdAt.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.expectedResolutionDate ? order.expectedResolutionDate.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.actualResolutionDate ? order.actualResolutionDate.split('T')[0] : <span className="text-gray-400 italic">Pending</span>}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <button

@@ -11,23 +11,16 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('Login clicked with:', email, password);
     try {
       setLoading(true);
       setError('');
-      console.log('Calling API...');
       const data = await login(email, password);
-      console.log('API response:', data); 
 
-      // Store token and user
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data));
 
-      // Role based redirect
       if (data.role === 'super_admin' || data.role === 'crm_user') {
         navigate('/dashboard');
-      } else if (data.role === 'company_admin' || data.role === 'company_crm_user') {
-        navigate('/client-dashboard');
       } else {
         navigate('/client-dashboard');
       }
@@ -49,26 +42,22 @@ export default function Login() {
         backgroundColor: '#f0f9ff'
       }}>
 
-      {/* Card */}
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm relative z-10">
 
-        {/* Logo */}
         <div className="flex flex-col items-center mb-0">
-          <img src="/logo.png" alt="ProDiligix" className="h-33 mb-0 object-contain" />
+          <img src="/logo.png" alt="ProDiligix" className="h-40  mb-10 object-contain" />
         </div>
 
         <h2 className="text-lg font-semibold text-gray-700 mb-10 text-center">
           Log in to your account
         </h2>
 
-        {/* Error message */}
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100">
             <p className="text-xs text-red-500 text-center">{error}</p>
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-sm text-gray-700 mb-1">Email</label>

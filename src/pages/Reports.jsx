@@ -1,110 +1,112 @@
-import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import React, { useState, useEffect } from 'react';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdDownload, MdFilterList, MdRefresh, MdSearch, MdClose } from 'react-icons/md';
-
-const logisticsReports = [
-  {
-    createdDate: '04/07/2026', id: 'LOG-202607041085', company: 'Roppen Transportation Service Pvt. Ltd.',
-    sendingAddress: 'Rapido Bangalore', receivingAddress: 'Divya Rudavath', senderPhone: '7406633660',
-    receiverPhone: '8179344152', modes: 'Forward', transportMode: 'Air', deliveryPartner: 'Bluedart',
-    deliveryStatus: 'in transit', shipmentDetail: 'Laptops', declaredValue: 32000, actualWeight: 3.5,
-    scanWeight: 3.5, noOfBoxes: 1, awb: '77056346710', insuranceRequired: true, packageRequired: false,
-    deliveryDate: '', expectedDelivery: '07/07/2026', finalRate: 1494.0, podStatus: 'No',
-  },
-  {
-    createdDate: '04/07/2026', id: 'LOG-202607041084', company: 'Roppen Transportation Service Pvt. Ltd.',
-    sendingAddress: 'Rapido Bangalore', receivingAddress: 'Ravi Prakash Gopalan', senderPhone: '7406633660',
-    receiverPhone: '9887356675', modes: 'Forward', transportMode: 'Air', deliveryPartner: 'Bluedart',
-    deliveryStatus: 'in transit', shipmentDetail: 'Laptops', declaredValue: 32000, actualWeight: 3.5,
-    scanWeight: 3.5, noOfBoxes: 1, awb: '90574780903', insuranceRequired: true, packageRequired: false,
-    deliveryDate: '', expectedDelivery: '08/07/2026', finalRate: 1593.94, podStatus: 'No',
-  },
-  {
-    createdDate: '04/07/2026', id: 'LOG-202607041083', company: 'Roppen Transportation Service Pvt. Ltd.',
-    sendingAddress: 'Rapido Bangalore', receivingAddress: 'Sahil Chhabra', senderPhone: '7406633660',
-    receiverPhone: '8053211788', modes: 'Forward', transportMode: 'Air', deliveryPartner: 'Bluedart',
-    deliveryStatus: 'in transit', shipmentDetail: 'Laptops', declaredValue: 32000, actualWeight: 3.5,
-    scanWeight: 3.5, noOfBoxes: 1, awb: '77056308044', insuranceRequired: true, packageRequired: false,
-    deliveryDate: '', expectedDelivery: '09/07/2026', finalRate: 1494.0, podStatus: 'No',
-  },
-  {
-    createdDate: '04/07/2026', id: 'LOG-202607041082', company: 'Roppen Transportation Service Pvt. Ltd.',
-    sendingAddress: 'Rapido Bangalore', receivingAddress: 'Ankul Ranjan', senderPhone: '8340570245',
-    receiverPhone: '7406633660', modes: 'Reverse', transportMode: 'Air', deliveryPartner: 'Delhivery',
-    deliveryStatus: 'cancelled', shipmentDetail: 'Laptops', declaredValue: 49000, actualWeight: 3.5,
-    scanWeight: 3.5, noOfBoxes: 1, awb: '31791010027624', insuranceRequired: true, packageRequired: false,
-    deliveryDate: '', expectedDelivery: '08/07/2026', finalRate: 0.0, podStatus: 'No',
-  },
-];
-
-const stampReports = [
-  {
-    createdDate: '03/07/2026', id: 'STMP-20260703001', firstParty: 'Roppen Transportation Services Pvt. Ltd.',
-    secondParty: 'SWAI Technologies Private Limited', denomination: 500, quantity: 1,
-    procurementCharges: 50, gst: 9, totalCharges: 559, status: 'In Transit', deliveryDate: '',
-  },
-  {
-    createdDate: '02/07/2026', id: 'STMP-20260702001', firstParty: 'Hivenix Inc.',
-    secondParty: 'CTRLX TECHNOLOGIES PRIVATE LIMITED', denomination: 500, quantity: 1,
-    procurementCharges: 50, gst: 9, totalCharges: 559, status: 'In Transit', deliveryDate: '',
-  },
-  {
-    createdDate: '01/07/2026', id: 'STMP-20260701006', firstParty: 'PhonePe Limited',
-    secondParty: 'Nutana Transportation Services Pvt. Ltd.', denomination: 500, quantity: 2,
-    procurementCharges: 100, gst: 18, totalCharges: 1118, status: 'Delivered', deliveryDate: '01/07/2026',
-  },
-];
-
-const giftingReports = [
-  {
-    createdDate: '01/07/2026', id: 'GIFT-20260701001', company: 'Rapido Technologies Pvt. Ltd.',
-    contactPerson: 'Ankit Sharma', purpose: 'Employee Appreciation', quantity: 150,
-    deliveryType: 'Bulk', preferredItems: 'Premium Gift Hampers', status: 'Accepted',
-    expectedDelivery: '15/07/2026', actualDelivery: '',
-  },
-  {
-    createdDate: '02/07/2026', id: 'GIFT-20260701002', company: 'Coca-Cola India Pvt. Ltd.',
-    contactPerson: 'Priya Menon', purpose: 'Diwali Gifting', quantity: 500,
-    deliveryType: 'Individual', preferredItems: 'Dry Fruits, Sweets', status: 'Pending',
-    expectedDelivery: '20/07/2026', actualDelivery: '',
-  },
-];
-
-const eventsReports = [
-  {
-    createdDate: '01/07/2026', id: 'EVT-20260701001', company: 'Rapido Technologies Pvt. Ltd.',
-    eventType: 'Team Outing', eventDate: '20/07/2026', venue: 'Coorg Resort',
-    location: 'Coorg, Karnataka', participants: 85, duration: '2 Days',
-    eventStatus: 'In Progress', quotationStatus: 'Accepted',
-  },
-  {
-    createdDate: '04/07/2026', id: 'EVT-20260701004', company: 'Wipro Technologies',
-    eventType: 'Team Building', eventDate: '18/07/2026', venue: 'Della Adventure Park',
-    location: 'Pune, Maharashtra', participants: 120, duration: '1 Day',
-    eventStatus: 'Completed', quotationStatus: 'Accepted',
-  },
-];
+import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const tabs = [
   { key: 'logistics', label: 'Logistics Management' },
   { key: 'stamp', label: 'Stamp Paper' },
   { key: 'gifting', label: 'Corporate Gifting' },
   { key: 'events', label: 'Event & Team Outing' },
+  { key: 'it', label: 'IT Solutions' },
 ];
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
 const statusConfig = {
-  'in transit': { color: '#068BC9', bg: '#e0f2fe', label: 'In Transit' },
-  'delivered': { color: '#22c55e', bg: '#dcfce7', label: 'Delivered' },
-  'cancelled': { color: '#ef4444', bg: '#fee2e2', label: 'Cancelled' },
-  'In Transit': { color: '#068BC9', bg: '#e0f2fe', label: 'In Transit' },
-  'Delivered': { color: '#22c55e', bg: '#dcfce7', label: 'Delivered' },
-  'Accepted': { color: '#22c55e', bg: '#dcfce7', label: 'Accepted' },
-  'Pending': { color: '#f97316', bg: '#ffedd5', label: 'Pending' },
-  'In Progress': { color: '#3b82f6', bg: '#eff6ff', label: 'In Progress' },
-  'Completed': { color: '#22c55e', bg: '#dcfce7', label: 'Completed' },
+  'Booked': { color: '#068BC9', bg: '#e0f2fe' },
+  'In Transit': { color: '#1d4ed8', bg: '#dbeafe' },
+  'Picked Up': { color: '#0ea5e9', bg: '#e0f2fe' },
+  'Delivered': { color: '#22c55e', bg: '#dcfce7' },
+  'Exception': { color: '#ef4444', bg: '#fee2e2' },
+  'Cancelled': { color: '#ef4444', bg: '#fee2e2' },
+  'RTO': { color: '#f97316', bg: '#ffedd5' },
+  'Pending': { color: '#f97316', bg: '#ffedd5' },
+  'In Printing': { color: '#8b5cf6', bg: '#ede9fe' },
+  'pending': { color: '#f97316', bg: '#ffedd5' },
+  'initialized': { color: '#068BC9', bg: '#e0f2fe' },
+  'accepted': { color: '#22c55e', bg: '#dcfce7' },
+  'rejected': { color: '#ef4444', bg: '#fee2e2' },
+  'under_review': { color: '#f97316', bg: '#ffedd5' },
+  'in_progress': { color: '#3b82f6', bg: '#eff6ff' },
+  'In Progress': { color: '#3b82f6', bg: '#eff6ff' },
+  'completed': { color: '#22c55e', bg: '#dcfce7' },
+  'cancelled': { color: '#ef4444', bg: '#fee2e2' },
+  'closed': { color: '#9ca3af', bg: '#f3f4f6' },
+  'Resolved': { color: '#22c55e', bg: '#dcfce7' },
+  'High': { color: '#ef4444', bg: '#fee2e2' },
+  'Medium': { color: '#f97316', bg: '#ffedd5' },
+  'Low': { color: '#22c55e', bg: '#dcfce7' },
 };
+
+const getStatus = (val) => statusConfig[val] || { color: '#9ca3af', bg: '#f3f4f6' };
+
+function safeParseArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function safeParseObject(val) {
+  if (!val) return {};
+  if (typeof val === 'object') return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function formatPreferredItems(row) {
+  const items = safeParseArray(row.preferredItems).map(item => {
+    if (item === 'Other Suggestions' && row.otherSuggestions) {
+      return `Other: ${row.otherSuggestions}`;
+    }
+    let label = item;
+    const itemBrands = safeParseObject(row.itemBrands);
+    const otherItemBrands = safeParseObject(row.otherItemBrands);
+    const brands = itemBrands[item];
+    if (Array.isArray(brands) && brands.length > 0) {
+      const brandsList = brands.map(b => (b === 'Others' && otherItemBrands[item]) ? otherItemBrands[item] : b).join(', ');
+      label += ` (Brands: ${brandsList})`;
+    }
+    return label;
+  });
+  return items.length > 0 ? items.join(' | ') : '—';
+}
+
+function formatBranding(row) {
+  const items = safeParseArray(row.brandingRequirements).map(item => {
+    let label = item;
+    const logoOpts = safeParseArray(row.logoPrintedOptions);
+    if (item === 'Logo Printed' && logoOpts.length > 0) {
+      label += ` (${logoOpts.join(', ')})`;
+    }
+    return label;
+  });
+  return items.length > 0 ? items.join(', ') : '—';
+}
+
+function formatAdditionalServices(row) {
+  const items = safeParseArray(row.additionalServices).map(item => {
+    if (item === 'Others' && row.otherAdditionalServices) return row.otherAdditionalServices;
+    return item;
+  });
+  return items.length > 0 ? items.join(', ') : '—';
+}
 
 export default function Reports() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -112,210 +114,325 @@ export default function Reports() {
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const [logisticsData, setLogisticsData] = useState([]);
+  const [stampData, setStampData] = useState([]);
+  const [giftingData, setGiftingData] = useState([]);
+  const [eventsData, setEventsData] = useState([]);
+  const [itData, setItData] = useState([]);
+
+  const user = getCurrentUser();
+  const isCompanyAdmin = user && user.role === 'company_admin';
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [logisticsRes, stampRes, giftingRes, eventsRes, itRes] = await Promise.all([
+          api.get('/api/shipments'),
+          api.get('/api/stamp-paper'),
+          api.get('/api/corporate-giftings'),
+          api.get('/api/events'),
+          api.get('/api/it-solutions'),
+        ]);
+        setLogisticsData(logisticsRes.data);
+        setStampData(stampRes.data);
+        setGiftingData(giftingRes.data);
+        setEventsData(eventsRes.data);
+        setItData(itRes.data);
+      } catch (error) {
+        console.error('Failed to fetch reports data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
 
   const handleDownload = () => {
     alert(`Downloading MIS Report for ${tabs.find(t => t.key === activeTab)?.label}...`);
   };
 
-  const renderLogistics = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max">
-        <thead>
-          <tr className="border-b border-gray-100">
-            {['Created Date', 'Service Request ID', 'Company Name', 'Sending Address', 'Receiving Address',
-              'Sender Phone', 'Receiver Phone', 'Modes', 'Transport Mode', 'Delivery Partner',
-              'Delivery Status', 'Shipment Detail', 'Declared Value', 'Actual Weight', 'Scan Weight',
-              'No. of Boxes', 'AWB Number', 'Insurance', 'Package', 'Delivery Date',
-              'Expected Delivery', 'Final Rate', 'POD Status'].map((h, i) => (
-              <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {logisticsReports.filter(r =>
-            r.id.toLowerCase().includes(searchText.toLowerCase()) ||
-            r.company.toLowerCase().includes(searchText.toLowerCase())
-          ).map((r, i) => {
-            const s = statusConfig[r.deliveryStatus];
-            return (
-              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdDate}</td>
-                <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.id}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.company}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap" style={{ color: '#068BC9' }}>{r.sendingAddress}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap" style={{ color: '#068BC9' }}>{r.receivingAddress}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.senderPhone}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.receiverPhone}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.modes}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transportMode}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryPartner}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s?.color, backgroundColor: s?.bg }}>
-                    {s?.label || r.deliveryStatus}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.shipmentDetail}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.declaredValue.toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.actualWeight}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.scanWeight}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.noOfBoxes}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.awb}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.insuranceRequired ? 'Yes' : 'No'}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.packageRequired ? 'Yes' : 'No'}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryDate || '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.expectedDelivery}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.finalRate}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full"
-                    style={{ color: r.podStatus === 'Yes' ? '#22c55e' : '#9ca3af', backgroundColor: r.podStatus === 'Yes' ? '#dcfce7' : '#f3f4f6' }}>
-                    {r.podStatus}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  const renderLogistics = () => {
+    const filtered = logisticsData.filter(r =>
+      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    const baseCols = ['Created Date', 'Service Request ID', 'Company ID', 'Modes', 'Transport Mode',
+      'Delivery Partner', 'Delivery Status', 'Shipment Detail', 'Declared Value',
+      'Actual Weight', 'Scan Weight', 'No. of Boxes', 'AWB Number'];
+    const restrictedCols = ['Insurance Required', 'Package Required'];
+    const tailCols = ['Invoice/Challan No.', 'Rate Type', 'Delivery Date', 'Expected Delivery Date', 'Final Rate', 'POD Status'];
+    const columns = isCompanyAdmin ? [...baseCols, ...tailCols] : [...baseCols, ...restrictedCols, ...tailCols];
 
-  const renderStamp = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max">
-        <thead>
-          <tr className="border-b border-gray-100">
-            {['Created Date', 'Service Request ID', '1st Party Name', '2nd Party Name',
-              'Denomination', 'Quantity', 'Procurement Charges', 'GST', 'Total Charges',
-              'Status', 'Delivery Date'].map((h, i) => (
-              <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {stampReports.filter(r =>
-            r.id.toLowerCase().includes(searchText.toLowerCase()) ||
-            r.firstParty.toLowerCase().includes(searchText.toLowerCase())
-          ).map((r, i) => {
-            const s = statusConfig[r.status];
-            return (
-              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdDate}</td>
-                <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.id}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.firstParty}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.secondParty}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.denomination}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.quantity}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.procurementCharges}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.gst}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.totalCharges}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s?.color, backgroundColor: s?.bg }}>
-                    {r.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryDate || '—'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-max">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {columns.map((h, i) => (
+                <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={columns.length} className="text-center py-10 text-gray-400 text-sm">No shipment records found</td></tr>
+            ) : filtered.map((r, i) => {
+              const s = getStatus(r.deliveryStatus);
+              return (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.companyId ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap capitalize">{r.modes || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transportMode || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transporter || '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.bg }}>{r.deliveryStatus || '—'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.shipmentDetails || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.shipmentDeclaredValue ? `₹${r.shipmentDeclaredValue}` : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.actualWeight ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.scanWeight ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.boxQuantity ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.shipmentAwbNumber || '—'}</td>
+                  {!isCompanyAdmin && (
+                    <>
+                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.insuranceRequired ? 'Yes' : 'No'}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.packageRequired ? 'Yes' : 'No'}</td>
+                    </>
+                  )}
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryChallanNumber || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.rateType || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryDate ? r.deliveryDate.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.expectedDeliveryDate ? r.expectedDeliveryDate.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.shipmentRate ? `₹${r.shipmentRate}` : '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full"
+                      style={{ color: r.podCopy ? '#22c55e' : '#9ca3af', backgroundColor: r.podCopy ? '#dcfce7' : '#f3f4f6' }}>
+                      {r.podCopy ? 'Yes' : 'No'}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
-  const renderGifting = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max">
-        <thead>
-          <tr className="border-b border-gray-100">
-            {['Created Date', 'Service Request ID', 'Company Name', 'Contact Person',
-              'Purpose', 'Quantity', 'Delivery Type', 'Preferred Items',
-              'Status', 'Expected Delivery', 'Actual Delivery'].map((h, i) => (
-              <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {giftingReports.filter(r =>
-            r.id.toLowerCase().includes(searchText.toLowerCase()) ||
-            r.company.toLowerCase().includes(searchText.toLowerCase())
-          ).map((r, i) => {
-            const s = statusConfig[r.status];
-            return (
-              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdDate}</td>
-                <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.id}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.company}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.contactPerson}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.purpose}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.quantity}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryType}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.preferredItems}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s?.color, backgroundColor: s?.bg }}>
-                    {r.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.expectedDelivery}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.actualDelivery || '—'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  const renderStamp = () => {
+    const filtered = stampData.filter(r =>
+      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.firstPartyName || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-max">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {['Service Request ID', '1st Party Name', '2nd Party Name', 'Denomination',
+                'Quantity', 'Total Charges', 'Status', 'Request Date', 'Delivery Date'].map((h, i) => (
+                <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={9} className="text-center py-10 text-gray-400 text-sm">No stamp paper records found</td></tr>
+            ) : filtered.map((r, i) => {
+              const s = getStatus(r.status);
+              return (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.firstPartyName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.secondPartyName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">₹{r.denomination}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.quantity}</td>
+                  <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>₹{r.totalCharges}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.bg }}>{r.status}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryDate ? r.deliveryDate.split('T')[0] : '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
-  const renderEvents = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max">
-        <thead>
-          <tr className="border-b border-gray-100">
-            {['Created Date', 'Service Request ID', 'Company Name', 'Event Type',
-              'Event Date', 'Venue', 'Location', 'Participants',
-              'Duration', 'Event Status', 'Quotation Status'].map((h, i) => (
-              <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {eventsReports.filter(r =>
-            r.id.toLowerCase().includes(searchText.toLowerCase()) ||
-            r.company.toLowerCase().includes(searchText.toLowerCase())
-          ).map((r, i) => {
-            const es = statusConfig[r.eventStatus];
-            const qs = statusConfig[r.quotationStatus];
-            return (
-              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdDate}</td>
-                <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.id}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.company}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.eventType}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.eventDate}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.venue}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.location}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.participants}</td>
-                <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.duration}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: es?.color, backgroundColor: es?.bg }}>
-                    {r.eventStatus}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: qs?.color, backgroundColor: qs?.bg }}>
-                    {r.quotationStatus}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  const renderGifting = () => {
+    const filtered = giftingData.filter(r =>
+      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.companyName || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-max">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {['Service Request ID', 'Company Name', 'Contact Person', 'Purpose of Gifting',
+                'Quantity', 'Delivery Type', 'Preferred Items & Brands', 'Branding Requirements',
+                'Additional Services', 'Created Date', 'Expected Delivery Date', 'Actual Delivery Date',
+                'Quotation Status'].map((h, i) => (
+                <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={13} className="text-center py-10 text-gray-400 text-sm">No corporate gifting records found</td></tr>
+            ) : filtered.map((r, i) => {
+              const s = getStatus(r.quotationStatus);
+              return (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.companyName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.contactPersonName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.purposeOfGifting || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                    {String(r.estimatedQuantity).toLowerCase() === 'others' && r.others ? r.others : (r.estimatedQuantity || '—')}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.deliveryType || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600" style={{ minWidth: '220px', whiteSpace: 'normal' }}>{formatPreferredItems(r)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600" style={{ minWidth: '160px', whiteSpace: 'normal' }}>{formatBranding(r)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600" style={{ minWidth: '160px', whiteSpace: 'normal' }}>{formatAdditionalServices(r)}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                    {r.expectedDeliveryDate ? r.expectedDeliveryDate.split('T')[0] : <span className="text-gray-400 italic">Pending</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                    {r.deliveryDate ? r.deliveryDate.split('T')[0] : <span className="text-gray-400 italic">Pending</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full capitalize" style={{ color: s.color, backgroundColor: s.bg }}>
+                      {r.quotationStatus || 'Initialized'}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderEvents = () => {
+    const filtered = eventsData.filter(r =>
+      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.businessName || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-max">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {['Service Request ID', 'Company', 'Contact Person', 'Event Type', 'Event Date',
+                'Venue', 'Location', 'Participants', 'Event Duration', 'Services Required',
+                'Budget', 'Created Date', 'Event Status'].map((h, i) => (
+                <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={13} className="text-center py-10 text-gray-400 text-sm">No event records found</td></tr>
+            ) : filtered.map((r, i) => {
+              const s = getStatus(r.eventStatus);
+              const services = safeParseArray(r.servicesRequired);
+              return (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.businessName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.contactPersonName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.eventType || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.eventDate ? r.eventDate.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.venue || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.location || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.participants || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.eventDuration || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600" style={{ minWidth: '180px', whiteSpace: 'normal' }}>
+                    {services.length > 0 ? services.join(', ') : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.budget ? `₹${r.budget}` : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.bg }}>{r.eventStatus}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderIT = () => {
+    const filtered = itData.filter(r =>
+      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (r.serviceType || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-max">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {['Service Request ID', 'Contact Person', 'Email', 'Service Type', 'Priority',
+                'Assigned To', 'Status', 'Created Date'].map((h, i) => (
+                <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={8} className="text-center py-10 text-gray-400 text-sm">No IT solution records found</td></tr>
+            ) : filtered.map((r, i) => {
+              const s = getStatus(r.status);
+              const p = getStatus(r.priority);
+              return (
+                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.contactPersonName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.email}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.serviceType}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: p.color, backgroundColor: p.bg }}>{r.priority}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.assignedTo || '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.bg }}>{r.status}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <p className="text-gray-400 text-sm">Loading reports...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -400,7 +517,6 @@ export default function Reports() {
               <MdRefresh size={18} className="text-gray-400"/>
             </button>
 
-            {/* Download MIS button */}
             <button
               onClick={handleDownload}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium ml-2 transition-opacity hover:opacity-90"
@@ -408,17 +524,6 @@ export default function Reports() {
               <MdDownload size={18}/>
               Download MIS Report
             </button>
-
-            <div className="ml-auto">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-                <MdSearch size={14} className="text-gray-400"/>
-                <input
-                  type="text"
-                  placeholder="Service Request ID or Company Name"
-                  className="bg-transparent text-xs outline-none w-52 text-gray-500"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Table */}
@@ -427,6 +532,7 @@ export default function Reports() {
             {activeTab === 'stamp' && renderStamp()}
             {activeTab === 'gifting' && renderGifting()}
             {activeTab === 'events' && renderEvents()}
+            {activeTab === 'it' && renderIT()}
           </div>
 
         </div>

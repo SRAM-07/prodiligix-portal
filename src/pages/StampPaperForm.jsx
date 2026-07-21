@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdArrowBack } from 'react-icons/md';
 
 const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
@@ -96,7 +96,7 @@ export default function StampPaperForm() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div className="flex-1 transition-all duration-300"
         style={{ marginLeft: sidebarExpanded ? '240px' : '64px' }}>
@@ -113,7 +113,22 @@ export default function StampPaperForm() {
           </div>
         </div>
 
-        <div className="p-6 max-w-4xl mx-auto">
+        <div
+          className="relative min-h-screen overflow-hidden"
+          style={{ backgroundColor: '#F7FBFF' }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url('/stamp-paper-bg.png')",
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'left bottom',
+              backgroundSize: 'contain',
+              opacity: 0.35,
+              pointerEvents: 'none'
+            }}
+          />
+          <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
           {/* Party Details */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
@@ -243,6 +258,7 @@ export default function StampPaperForm() {
             </button>
           </div>
 
+          </div>
         </div>
       </div>
     </div>

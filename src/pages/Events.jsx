@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdAdd } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
+import EventQuotationDialog from '../components/EventQuotationDialog';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
+
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
 
 const eventStatusConfig = {
   'under_review': { color: '#f97316', bg: '#ffedd5', label: 'Under Review' },
@@ -21,19 +25,26 @@ export default function Events() {
   const [searchText, setSearchText] = useState('');
   const [eventsData, setEventsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quotationDialogId, setQuotationDialogId] = useState(null);
   const navigate = useNavigate();
 
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
+  const isCrmUser = user?.role === 'crm_user' || user?.role === 'super_admin';
+  const isCompanyUser = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await api.get('/api/events');
+      setEventsData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await api.get('/api/events');
-        setEventsData(response.data);
-      } catch (error) {
-        console.error('Failed to fetch events:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEvents();
   }, []);
 
@@ -51,7 +62,7 @@ export default function Events() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -131,17 +142,19 @@ export default function Events() {
 
             <span className="text-sm text-gray-500">({filtered.length})</span>
 
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <button onClick={fetchEvents} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
               <MdRefresh size={18} className="text-gray-400" />
             </button>
 
-            <button
-              onClick={() => navigate('/events/new')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-              style={{ backgroundColor: '#22c55e' }}>
-              <MdAdd size={18} />
-              New Event
-            </button>
+            {!isAdmin && (
+              <button
+                onClick={() => navigate('/events/new')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
+                style={{ backgroundColor: '#22c55e' }}>
+                <MdAdd size={18} />
+                New Event
+              </button>
+            )}
           </div>
 
           {/* Table */}
@@ -151,8 +164,9 @@ export default function Events() {
                 <tr className="border-b border-gray-100">
                   {[
                     'Service Request ID', 'Company', 'Contact Person',
-                    'Event Type', 'Event Date', 'Location',
-                    'Participants', 'Budget', 'Event Status', 'Actions'
+                    'Event Type', 'Event Date', 'Venue', 'Location',
+                    'Participants', 'Event Duration', 'Budget', 'Created Date',
+                    'Quotation Action', 'Event Status', 'Actions'
                   ].map((col, i) => (
                     <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
                       {col}
@@ -163,7 +177,7 @@ export default function Events() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-10 text-gray-400 text-sm">
+                    <td colSpan={14} className="text-center py-10 text-gray-400 text-sm">
                       No events found
                     </td>
                   </tr>
@@ -183,10 +197,33 @@ export default function Events() {
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {event.eventDate ? event.eventDate.split('T')[0] : '—'}
                         </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.venue || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.location || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.participants || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{event.eventDuration || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {event.budget ? `₹${event.budget}` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {event.createdAt ? event.createdAt.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {isCrmUser && (
+                            <button
+                              onClick={() => setQuotationDialogId(event.id)}
+                              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                              style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                              Upload Quotation
+                            </button>
+                          )}
+                          {isCompanyUser && (
+                            <button
+                              onClick={() => setQuotationDialogId(event.id)}
+                              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                              style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
+                              View Quotations
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="text-xs font-medium px-2 py-1 rounded-full"
@@ -213,6 +250,14 @@ export default function Events() {
 
         </div>
       </div>
+
+      {quotationDialogId && (
+        <EventQuotationDialog
+          eventId={quotationDialogId}
+          onClose={() => setQuotationDialogId(null)}
+          onStatusChange={() => fetchEvents()}
+        />
+      )}
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
 import { MdArrowBack, MdDownload, MdAttachFile, MdPerson, MdDescription, MdAdminPanelSettings, MdUpload, MdClose } from 'react-icons/md';
 import api from '../services/api';
+import SmartSidebar from '../components/SmartSidebar';
 
 const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
 const statusOptions = ['Booked', 'In Printing', 'In Transit', 'Delivered'];
@@ -93,7 +93,7 @@ export default function StampPaperDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"

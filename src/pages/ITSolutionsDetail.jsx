@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdArrowBack, MdComputer, MdPerson, MdClose } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const statusOptions = ['Pending', 'In Progress', 'Resolved', 'Cancelled'];
 
@@ -18,6 +19,8 @@ const priorityConfig = {
   'Medium': { color: '#f97316', bg: '#ffedd5' },
   'Low': { color: '#22c55e', bg: '#dcfce7' },
 };
+
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
 
 function InfoRow({ label, value }) {
   return (
@@ -40,6 +43,9 @@ export default function ITSolutionsDetail() {
   const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -107,7 +113,7 @@ export default function ITSolutionsDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -188,9 +194,15 @@ export default function ITSolutionsDetail() {
                   <InfoRow label="Actual Resolution" value={detail.actualResolutionDate ? detail.actualResolutionDate.split('T')[0] : 'Pending'} />
                 </div>
                 {detail.description && (
-                  <div>
+                  <div className="mb-4">
                     <p className="text-xs text-gray-400 mb-1">Description</p>
                     <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{detail.description}</p>
+                  </div>
+                )}
+                {isCancelled && detail.cancellationReason && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Cancellation Reason</p>
+                    <p className="text-sm text-red-500 bg-red-50 rounded-lg p-3">{detail.cancellationReason}</p>
                   </div>
                 )}
               </div>
@@ -199,52 +211,53 @@ export default function ITSolutionsDetail() {
             {/* Right — Admin Panel */}
             <div className="flex flex-col gap-5">
 
-              {/* Admin Actions */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
+              {isAdmin && (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
 
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-1">Status</p>
-                  <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    disabled={isCancelled}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none">
-                    {statusOptions.map((opt, i) => (
-                      <option key={i}>{opt}</option>
-                    ))}
-                  </select>
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-1">Status</p>
+                    <select
+                      value={status}
+                      onChange={e => setStatus(e.target.value)}
+                      disabled={isCancelled}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none">
+                      {statusOptions.map((opt, i) => (
+                        <option key={i}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-1">Assigned To</p>
+                    <input
+                      type="text"
+                      value={assignedTo}
+                      onChange={e => setAssignedTo(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-1">Admin Notes</p>
+                    <textarea
+                      rows={3}
+                      value={adminNotes}
+                      onChange={e => setAdminNotes(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none resize-none"
+                      placeholder="Add notes..."
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleUpdate}
+                    disabled={isCancelled || updating}
+                    className="w-full py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-40"
+                    style={{ backgroundColor: '#068BC9' }}>
+                    {updating ? 'Updating...' : 'Update'}
+                  </button>
                 </div>
-
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-1">Assigned To</p>
-                  <input
-                    type="text"
-                    value={assignedTo}
-                    onChange={e => setAssignedTo(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-1">Admin Notes</p>
-                  <textarea
-                    rows={3}
-                    value={adminNotes}
-                    onChange={e => setAdminNotes(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none resize-none"
-                    placeholder="Add notes..."
-                  />
-                </div>
-
-                <button
-                  onClick={handleUpdate}
-                  disabled={isCancelled || updating}
-                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-40"
-                  style={{ backgroundColor: '#068BC9' }}>
-                  {updating ? 'Updating...' : 'Update'}
-                </button>
-              </div>
+              )}
 
               {/* Timeline */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -272,7 +285,7 @@ export default function ITSolutionsDetail() {
               </div>
 
               {/* Cancel */}
-              {!isCancelled && !isResolved && (
+              {isAdmin && !isCancelled && !isResolved && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="w-full py-2.5 rounded-lg text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors">

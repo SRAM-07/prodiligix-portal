@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdDownload, MdExpandMore } from 'react-icons/md';
-import { getCurrentUser } from '../services/authService';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline } from 'react-icons/md';
 import api from '../services/api';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
@@ -74,6 +73,14 @@ export default function Logistics() {
       </div>
     );
   }
+
+  const columns = [
+    'Service Request ID', 'Company ID', 'Requesting Plant', 'Sending Plant', 'Receiving Plant',
+    'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
+    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate', 'AWB Number',
+    'Delivery Partner', 'Status', 'Created Date', 'Delivery Date', 'Expected Delivery Date',
+    'Actions', 'Email Label'
+  ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -169,12 +176,7 @@ export default function Logistics() {
             <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {[
-                    'Service Request ID', 'Transport Mode', 'Shipment Detail',
-                    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate',
-                    'AWB Number', 'Delivery Partner', 'Status',
-                    'Created Date', 'Delivery Date', 'Actions'
-                  ].map((col, i) => (
+                  {columns.map((col, i) => (
                     <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
                       {col}
                     </th>
@@ -184,7 +186,7 @@ export default function Logistics() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="text-center py-10 text-gray-400 text-sm">
+                    <td colSpan={columns.length} className="text-center py-10 text-gray-400 text-sm">
                       No shipments found
                     </td>
                   </tr>
@@ -200,6 +202,12 @@ export default function Logistics() {
                           onClick={() => navigate(`/logistics/${order.id}`)}>
                           {order.serviceRequestId}
                         </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.companyId ?? '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.requestingPlantId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.sendingPlantId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.receivingPlantId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.pickupAddressId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryAddressId ?? 'N/A'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentDetails || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
@@ -224,6 +232,9 @@ export default function Logistics() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {order.deliveryDate ? order.deliveryDate.split('T')[0] : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {order.expectedDeliveryDate ? order.expectedDeliveryDate.split('T')[0] : '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap relative">
                           {docs.length > 0 ? (
@@ -252,6 +263,18 @@ export default function Logistics() {
                             </div>
                           ) : (
                             <span className="text-xs text-gray-400">No Docs</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {order.shipmentWithLabel ? (
+                            <button
+                              onClick={() => alert('Send Label Email — coming soon!')}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                              title="Send Label Email">
+                              <MdMailOutline size={16} style={{ color: '#068BC9' }} />
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
                       </tr>

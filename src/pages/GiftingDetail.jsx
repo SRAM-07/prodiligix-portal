@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import {
   MdArrowBack, MdDownload, MdUpload, MdCheckCircle, MdCancel,
   MdHistory, MdClose
 } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const statusConfig = {
   accepted: { color: '#22c55e', bg: '#dcfce7', label: 'Accepted' },
@@ -13,6 +14,9 @@ const statusConfig = {
   initialized: { color: '#f97316', bg: '#ffedd5', label: 'Initialized' },
   pending: { color: '#9ca3af', bg: '#f3f4f6', label: 'Pending' },
 };
+
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
+const COMPANY_ROLES = ['company_user', 'company_admin', 'company_crm_user'];
 
 function InfoRow({ label, value }) {
   return (
@@ -31,8 +35,13 @@ export default function GiftingDetail() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
+  const isCompanyUser = user && COMPANY_ROLES.includes(user.role);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -51,6 +60,38 @@ export default function GiftingDetail() {
     };
     fetchDetail();
   }, [id]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_BASE}/api/corporate-giftings/${id}/quotations`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const quotationsRes = await api.get(`/api/corporate-giftings/${id}/quotations`);
+      setQuotations(quotationsRes.data);
+      const detailRes = await api.get(`/api/corporate-giftings/${id}`);
+      setDetail(detailRes.data);
+    } catch (error) {
+      console.error('Failed to upload quotation:', error);
+      alert('Failed to upload quotation. Please try again.');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleAccept = async (quotationId) => {
     try {
@@ -107,7 +148,7 @@ export default function GiftingDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -217,7 +258,7 @@ export default function GiftingDetail() {
                             </td>
                             <td className="py-3 text-xs text-gray-500">{q.rejectedReason || '—'}</td>
                             <td className="py-3">
-                              {q.status === 'initialized' && (
+                              {isCompanyUser && q.status === 'initialized' ? (
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleAccept(q.id)}
@@ -232,8 +273,9 @@ export default function GiftingDetail() {
                                     Reject
                                   </button>
                                 </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
                               )}
-                              {q.status !== 'initialized' && <span className="text-xs text-gray-400">—</span>}
                             </td>
                           </tr>
                         );
@@ -263,42 +305,40 @@ export default function GiftingDetail() {
                 )}
               </div>
 
-              {/* Admin Actions */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-2">Upload Quotation</p>
+              {/* Admin Actions — admin/CRM only */}
+              {isAdmin && (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</h3>
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-2">Upload Quotation</p>
+                    <label
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer">
+                      <MdUpload size={16} />
+                      {uploading ? 'Uploading...' : 'Upload Quotation'}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                        onChange={handleUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-2">Set Expected Delivery Date</p>
+                    <input
+                      type="date"
+                      defaultValue={detail.expectedDeliveryDate}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-300"
+                    />
+                  </div>
                   <button
-                    onClick={async () => {
-                      try {
-                        await api.post(`/api/corporate-giftings/${id}/quotations`);
-                        const quotationsRes = await api.get(`/api/corporate-giftings/${id}/quotations`);
-                        setQuotations(quotationsRes.data);
-                        const detailRes = await api.get(`/api/corporate-giftings/${id}`);
-                        setDetail(detailRes.data);
-                      } catch (error) {
-                        console.error('Failed to upload quotation:', error);
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-500 transition-colors">
-                    <MdUpload size={16} />
-                    Upload Quotation
+                    className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
+                    style={{ backgroundColor: '#068BC9' }}>
+                    Update
                   </button>
                 </div>
-                <div className="mb-4">
-                  <p className="text-xs text-gray-400 mb-2">Set Expected Delivery Date</p>
-                  <input
-                    type="date"
-                    defaultValue={detail.expectedDeliveryDate}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-300"
-                  />
-                </div>
-                <button
-                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
-                  style={{ backgroundColor: '#068BC9' }}>
-                  Update
-                </button>
-              </div>
+              )}
 
               {/* Timeline */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

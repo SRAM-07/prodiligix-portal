@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import {
   MdArrowBack, MdDownload, MdUpload, MdCheckCircle,
   MdCancel, MdHistory, MdClose, MdEvent
 } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const eventStatusOptions = [
   { label: 'Under Review', value: 'under_review' },
@@ -30,6 +31,9 @@ const quotationStatusConfig = {
   pending: { color: '#9ca3af', bg: '#f3f4f6', label: 'Pending' },
 };
 
+const ADMIN_ROLES = ['super_admin', 'crm_user'];
+const COMPANY_ROLES = ['company_user', 'company_admin', 'company_crm_user'];
+
 function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -48,8 +52,13 @@ export default function EventsDetail() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const user = getCurrentUser();
+  const isAdmin = user && ADMIN_ROLES.includes(user.role);
+  const isCompanyUser = user && COMPANY_ROLES.includes(user.role);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -90,12 +99,34 @@ export default function EventsDetail() {
     }
   };
 
-  const handleUploadQuotation = async () => {
+  const handleUploadQuotation = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
     try {
-      await api.post(`/api/events/${id}/quotations/upload`);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_BASE}/api/events/${id}/quotations/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Upload failed');
+      }
+
       await refreshData();
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to upload quotation');
+      alert(error.message || 'Failed to upload quotation');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -145,7 +176,7 @@ export default function EventsDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -280,7 +311,7 @@ export default function EventsDetail() {
                             </td>
                             <td className="py-3 text-xs text-gray-500">{q.rejectionNote || '—'}</td>
                             <td className="py-3">
-                              {q.status === 'Initialized' && (
+                              {isCompanyUser && q.status === 'Initialized' ? (
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleAccept(q.id)}
@@ -296,8 +327,9 @@ export default function EventsDetail() {
                                     Reject
                                   </button>
                                 </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
                               )}
-                              {q.status !== 'Initialized' && <span className="text-xs text-gray-400">—</span>}
                             </td>
                           </tr>
                         );
@@ -311,37 +343,50 @@ export default function EventsDetail() {
             {/* Right — Admin Panel */}
             <div className="flex flex-col gap-5">
 
-              {/* Event Status */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Event Status</h3>
-                <select
-                  value={eventStatus}
-                  onChange={e => setEventStatus(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none mb-3">
-                  {eventStatusOptions.map((opt, i) => (
-                    <option key={i} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleUpdateStatus}
-                  className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
-                  style={{ backgroundColor: '#068BC9' }}>
-                  Update Status
-                </button>
-              </div>
+              {isAdmin && (
+                <>
+                  {/* Event Status */}
+                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Event Status</h3>
+                    <select
+                      value={eventStatus}
+                      onChange={e => setEventStatus(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-600 outline-none mb-3">
+                      {eventStatusOptions.map((opt, i) => (
+                        <option key={i} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleUpdateStatus}
+                      className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
+                      style={{ backgroundColor: '#068BC9' }}>
+                      Update Status
+                    </button>
+                  </div>
 
-              {/* Upload Quotation */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Upload Quotation</h3>
-                <p className="text-xs text-gray-400 mb-3">Accepted: PDF, Excel, Images</p>
-                <button
-                  onClick={handleUploadQuotation}
-                  disabled={rejectionCount >= 5}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  <MdUpload size={16} />
-                  Upload File
-                </button>
-              </div>
+                  {/* Upload Quotation */}
+                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Upload Quotation</h3>
+                    <p className="text-xs text-gray-400 mb-3">Accepted: PDF, Excel, Images</p>
+                    <label
+                      className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border-2 border-dashed transition-colors ${
+                        rejectionCount >= 5
+                          ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-500 cursor-pointer'
+                      }`}>
+                      <MdUpload size={16} />
+                      {uploading ? 'Uploading...' : 'Upload File'}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                        onChange={handleUploadQuotation}
+                        disabled={uploading || rejectionCount >= 5}
+                      />
+                    </label>
+                  </div>
+                </>
+              )}
 
               {/* Timeline */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

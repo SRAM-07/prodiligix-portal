@@ -11,7 +11,6 @@ import {
   MdBarChart,
   MdLogout,
   MdPerson,
-  MdUploadFile
 } from 'react-icons/md';
 
 const menuSections = [
@@ -36,7 +35,6 @@ const menuSections = [
     items: [
       { icon: <MdCalculate size={20}/>, label: 'Rate Calculator', path: '/rate-calculator' },
       { icon: <MdBarChart size={20}/>, label: 'Reports', path: '/reports' },
-       { icon: <MdUploadFile size={20}/>, label: 'Bulk Upload', path: '/client/bulk-upload' },
     ]
   }
 ];
