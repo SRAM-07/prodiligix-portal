@@ -4,6 +4,7 @@ import ClientLayout from '../components/ClientLayout';
 import { MdArrowBack, MdAttachFile, MdAdd, MdDelete } from 'react-icons/md';
 import AddressTypeahead from '../components/AddressTypeahead';
 import { getCurrentUser } from '../services/authService';
+import api from '../services/api';
 
 const transportModes = ['Air', 'Surface', 'Express'];
 const transporters = ['Bluedart', 'DelhiveryOne', 'NimbusPost'];
@@ -18,6 +19,7 @@ export default function BookShipment() {
   const companyId = user?.companyId || 1;
 
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [ewayFile, setEwayFile] = useState(null);
 
@@ -91,13 +93,49 @@ export default function BookShipment() {
   const rateType = parseFloat(form.declaredValue) > 10000 ? 'B2B' : 'B2C';
   const finalRate = (parseFloat(scanWeight) * 45 * 1.18).toFixed(2);
 
-  const handleSubmit = () => {
+  const totalBoxQuantity = boxes.reduce((sum, b) => sum + (parseInt(b.noOfBoxes) || 0), 0);
+
+  const handleSubmit = async () => {
     if (!form.pickupAddressId || !form.deliveryAddressId || !form.actualWeight) {
       alert('Please select a Pickup Address, Delivery Address and enter Actual Weight');
       return;
     }
-    setSubmitted(true);
-    setTimeout(() => navigate('/client/logistics'), 2500);
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        companyId,
+        pickupAddressId: form.pickupAddressId,
+        deliveryAddressId: form.deliveryAddressId,
+        transportMode: form.transportMode,
+        shipmentDetails: form.shipmentDetail,
+        shipmentDetailsDescription: form.shipmentDescription,
+        shipmentDeclaredValue: parseFloat(form.declaredValue) || 0,
+        deliveryChallanNumber: form.challanNo,
+        actualWeight: parseFloat(form.actualWeight),
+        boxQuantity: totalBoxQuantity || parseInt(form.noOfBoxes) || 1,
+        boxes: JSON.stringify(boxes),
+        dimensionUnit: form.dimensionUnit,
+        volumetricWeight: parseFloat(volumetricWeight),
+        scanWeight: parseFloat(scanWeight),
+        insuranceRequired: form.insurance === 'yes',
+        packageRequired: form.packaging === 'yes',
+        modes: form.modeType.toLowerCase(),
+        transporter: form.transporter,
+        sourceType: 'wallet',
+      };
+
+      await api.post('/api/shipments', payload);
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/client/logistics'), 2500);
+    } catch (error) {
+      console.error('Failed to create shipment:', error);
+      const message = error.response?.data?.message || error.response?.data?.error || 'Failed to book shipment. Please try again.';
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -484,9 +522,10 @@ export default function BookShipment() {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90"
+            disabled={submitting}
+            className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: '#068BC9' }}>
-            Book Shipment
+            {submitting ? 'Booking...' : 'Book Shipment'}
           </button>
         </div>
 

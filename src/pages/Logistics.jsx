@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney } from 'react-icons/md';
 import api from '../services/api';
+import SetRateDialog from '../components/SetRateDialog';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
@@ -35,21 +36,31 @@ export default function Logistics() {
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rateDialogShipment, setRateDialogShipment] = useState(null);
+  const [toast, setToast] = useState('');
   const navigate = useNavigate();
 
+  const fetchShipments = async () => {
+    try {
+      const response = await api.get('/api/shipments');
+      setLogisticsData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch shipments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchShipments = async () => {
-      try {
-        const response = await api.get('/api/shipments');
-        setLogisticsData(response.data);
-      } catch (error) {
-        console.error('Failed to fetch shipments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchShipments();
   }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(''), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
   const filtered = logisticsData.filter(o =>
     (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
@@ -66,6 +77,11 @@ export default function Logistics() {
     return docs;
   };
 
+  const handleRateSuccess = (message) => {
+    setToast(message);
+    fetchShipments();
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
@@ -77,9 +93,9 @@ export default function Logistics() {
   const columns = [
     'Service Request ID', 'Company ID', 'Requesting Plant', 'Sending Plant', 'Receiving Plant',
     'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
-    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate', 'AWB Number',
-    'Delivery Partner', 'Status', 'Created Date', 'Delivery Date', 'Expected Delivery Date',
-    'Actions', 'Email Label'
+    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate', 'Payment Status',
+    'AWB Number', 'Delivery Partner', 'Status', 'Created Date', 'Delivery Date',
+    'Expected Delivery Date', 'Actions', 'Email Label', 'Rate Action'
   ];
 
   return (
@@ -112,6 +128,12 @@ export default function Logistics() {
             </div>
           </div>
         </div>
+
+        {toast && (
+          <div className="fixed top-20 right-6 z-[200] bg-white border border-green-200 shadow-lg rounded-xl px-4 py-3">
+            <p className="text-sm text-green-600 font-medium">{toast}</p>
+          </div>
+        )}
 
         <div className="p-5">
 
@@ -166,7 +188,7 @@ export default function Logistics() {
 
             <span className="text-sm text-gray-500">({filtered.length})</span>
 
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <button onClick={fetchShipments} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
               <MdRefresh size={18} className="text-gray-400" />
             </button>
           </div>
@@ -218,6 +240,15 @@ export default function Logistics() {
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.rateType || '—'}</td>
                         <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>
                           {order.shipmentRate ? `₹${order.shipmentRate}` : '—'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={{
+                              color: order.requestApproved ? '#22c55e' : '#f97316',
+                              backgroundColor: order.requestApproved ? '#dcfce7' : '#ffedd5'
+                            }}>
+                            {order.requestApproved ? 'Processed' : 'Pending'}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentAwbNumber || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transporter || '—'}</td>
@@ -277,6 +308,15 @@ export default function Logistics() {
                             <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <button
+                            onClick={() => setRateDialogShipment(order)}
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                            style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                            <MdAttachMoney size={14} />
+                            {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })
@@ -287,6 +327,15 @@ export default function Logistics() {
 
         </div>
       </div>
+
+      {rateDialogShipment && (
+        <SetRateDialog
+          shipmentId={rateDialogShipment.id}
+          currentRate={rateDialogShipment.shipmentRate}
+          onClose={() => setRateDialogShipment(null)}
+          onSuccess={handleRateSuccess}
+        />
+      )}
     </div>
   );
 }

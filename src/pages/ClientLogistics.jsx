@@ -168,7 +168,7 @@ export default function ClientLogistics() {
               <tr className="border-b border-gray-100">
                 {[
                   'Service Request ID', 'Transport Mode', 'Shipment Detail',
-                  'Declared Value', 'Boxes', 'AWB Number',
+                  'Declared Value', 'Boxes', 'Final Rate', 'Payment Status', 'AWB Number',
                   'Delivery Partner', 'Status', 'Created Date', 'Actions'
                 ].map((col, i) => (
                   <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
@@ -180,7 +180,7 @@ export default function ClientLogistics() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-gray-400 text-sm">
+                  <td colSpan={12} className="text-center py-10 text-gray-400 text-sm">
                     No shipments found
                   </td>
                 </tr>
@@ -201,6 +201,18 @@ export default function ClientLogistics() {
                         {order.shipmentDeclaredValue ? `₹${order.shipmentDeclaredValue}` : '—'}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.boxQuantity || '—'}</td>
+                      <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>
+                        {order.shipmentRate ? `₹${order.shipmentRate}` : '—'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-xs font-medium px-2 py-1 rounded-full"
+                          style={{
+                            color: order.requestApproved ? '#22c55e' : '#f97316',
+                            backgroundColor: order.requestApproved ? '#dcfce7' : '#ffedd5'
+                          }}>
+                          {order.requestApproved ? 'Processed' : 'Pending'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentAwbNumber || '—'}</td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transporter || '—'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">

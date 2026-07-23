@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
 import { MdArrowBack, MdAdd, MdClose } from 'react-icons/md';
+import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const purposeOptions = [
   'Employee Onboarding/Welcome Kit',
@@ -92,7 +94,11 @@ export default function CorporateGiftingForm() {
   const navigate = useNavigate();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const user = getCurrentUser();
+  const companyId = user?.companyId || 1;
 
   const [form, setForm] = useState({
     companyName: '',
@@ -132,10 +138,47 @@ export default function CorporateGiftingForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setSubmitted(true);
-    setTimeout(() => navigate('/gifting'), 2500);
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        companyId,
+        userId: user?.id,
+        companyName: form.companyName,
+        contactPersonName: form.contactPersonName,
+        designation: form.designation,
+        email: form.email,
+        primaryPhone: form.primaryPhone,
+        companyWebsite: form.companyWebsite,
+        purposeOfGifting: form.purposeOfGifting,
+        estimatedQuantity: form.estimatedQuantity,
+        others: form.others,
+        requiredDeliveryDate: form.requiredDeliveryDate,
+        deliveryType: form.deliveryType,
+        preferredItems: JSON.stringify(form.preferredItems),
+        otherSuggestions: form.otherSuggestions,
+        itemBrands: JSON.stringify(form.itemBrands),
+        otherItemBrands: JSON.stringify(form.otherItemBrands),
+        brandingRequirements: JSON.stringify(form.brandingRequirements),
+        logoPrintedOptions: JSON.stringify(form.logoPrintedOptions),
+        additionalServices: JSON.stringify(form.additionalServices),
+        otherAdditionalServices: form.otherAdditionalServices,
+        specificNotes: form.specificNotes,
+      };
+
+      await api.post('/api/corporate-giftings', payload);
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/gifting'), 2500);
+    } catch (error) {
+      console.error('Failed to submit corporate gifting request:', error);
+      const message = error.response?.data?.error || error.response?.data?.message || 'Failed to submit request. Please try again.';
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -191,213 +234,213 @@ export default function CorporateGiftingForm() {
           />
           <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
-          {/* Company Information */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Information</h3>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Company Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.companyName}
-                  onChange={e => handleChange('companyName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.companyName && <p className="text-xs text-red-400 mt-1">{errors.companyName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Contact Person Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.contactPersonName}
-                  onChange={e => handleChange('contactPersonName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.contactPersonName && <p className="text-xs text-red-400 mt-1">{errors.contactPersonName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Designation</p>
-                <input type="text" value={form.designation}
-                  onChange={e => handleChange('designation', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Contact Number <span className="text-red-400">*</span></p>
-                <input type="tel" maxLength={10} value={form.primaryPhone}
-                  onChange={e => handleChange('primaryPhone', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.primaryPhone && <p className="text-xs text-red-400 mt-1">{errors.primaryPhone}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Email</p>
-                <input type="email" value={form.email}
-                  onChange={e => handleChange('email', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Company Website</p>
-                <input type="text" value={form.companyWebsite}
-                  onChange={e => handleChange('companyWebsite', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* Gifting Requirement */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Gifting Requirement</h3>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Purpose of Gifting</p>
-                <select value={form.purposeOfGifting}
-                  onChange={e => handleChange('purposeOfGifting', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  <option value="">Select Purpose</option>
-                  {purposeOptions.map((o, i) => <option key={i}>{o}</option>)}
-                </select>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Estimated Quantity</p>
-                <select value={form.estimatedQuantity}
-                  onChange={e => handleChange('estimatedQuantity', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  <option value="">Select Quantity</option>
-                  {quantityOptions.map((o, i) => <option key={i}>{o}</option>)}
-                </select>
-              </div>
-              {form.estimatedQuantity === 'Others' && (
+            {/* Company Information */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Information</h3>
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Specify Quantity</p>
-                  <input type="text" value={form.others}
-                    onChange={e => handleChange('others', e.target.value)}
+                  <p className="text-xs text-gray-400 mb-1">Company Name <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.companyName}
+                    onChange={e => handleChange('companyName', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.companyName && <p className="text-xs text-red-400 mt-1">{errors.companyName}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Contact Person Name <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.contactPersonName}
+                    onChange={e => handleChange('contactPersonName', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.contactPersonName && <p className="text-xs text-red-400 mt-1">{errors.contactPersonName}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Designation</p>
+                  <input type="text" value={form.designation}
+                    onChange={e => handleChange('designation', e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
                 </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Required Delivery Date <span className="text-red-400">*</span></p>
-                <input type="date" value={form.requiredDeliveryDate}
-                  onChange={e => handleChange('requiredDeliveryDate', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.requiredDeliveryDate && <p className="text-xs text-red-400 mt-1">{errors.requiredDeliveryDate}</p>}
               </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Delivery Type</p>
-                <select value={form.deliveryType}
-                  onChange={e => handleChange('deliveryType', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  <option value="">Select Type</option>
-                  {deliveryTypeOptions.map((o, i) => <option key={i}>{o}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Preferred Items */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Preferred Items</h3>
-            <div className="mb-4">
-              <MultiSelect
-                label="Preferred Items to Include"
-                options={productOptions}
-                selected={form.preferredItems}
-                onChange={val => handleChange('preferredItems', val)}
-              />
-            </div>
-
-            {form.preferredItems.includes('Other Suggestions') && (
-              <div className="mb-4">
-                <p className="text-xs text-gray-400 mb-1">Other Suggestions</p>
-                <textarea rows={3} value={form.otherSuggestions}
-                  onChange={e => handleChange('otherSuggestions', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
-              </div>
-            )}
-
-            {/* Dynamic brand selectors per item */}
-            <div className="grid grid-cols-2 gap-4">
-              {form.preferredItems.filter(item => item !== 'Other Suggestions').map((item, i) => (
-                <div key={i}>
-                  <MultiSelect
-                    label={`Brands for ${item.split(' ')[0]}`}
-                    options={brandOptionsMap[item] || ['Generic/Unbranded', 'Others']}
-                    selected={form.itemBrands[item] || []}
-                    onChange={val => handleChange('itemBrands', { ...form.itemBrands, [item]: val })}
-                  />
-                  {(form.itemBrands[item] || []).includes('Others') && (
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-400 mb-1">Other Brands for {item.split(' ')[0]}</p>
-                      <input type="text"
-                        value={form.otherItemBrands[item] || ''}
-                        onChange={e => handleChange('otherItemBrands', { ...form.otherItemBrands, [item]: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Branding Requirements */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Branding Requirements</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <MultiSelect
-                label="Branding Requirements"
-                options={brandingOptions}
-                selected={form.brandingRequirements}
-                onChange={val => handleChange('brandingRequirements', val)}
-              />
-              {form.brandingRequirements.includes('Logo Printed') && (
-                <MultiSelect
-                  label="Select Printing Type"
-                  options={logoPrintedOptions}
-                  selected={form.logoPrintedOptions}
-                  onChange={val => handleChange('logoPrintedOptions', val)}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Additional Services */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Additional Services</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <MultiSelect
-                label="Select Additional Services"
-                options={additionalServiceOptions}
-                selected={form.additionalServices}
-                onChange={val => handleChange('additionalServices', val)}
-              />
-              {form.additionalServices.includes('Others') && (
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Other Additional Services</p>
-                  <textarea rows={3} value={form.otherAdditionalServices}
-                    onChange={e => handleChange('otherAdditionalServices', e.target.value)}
+                  <p className="text-xs text-gray-400 mb-1">Contact Number <span className="text-red-400">*</span></p>
+                  <input type="tel" maxLength={10} value={form.primaryPhone}
+                    onChange={e => handleChange('primaryPhone', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.primaryPhone && <p className="text-xs text-red-400 mt-1">{errors.primaryPhone}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Email</p>
+                  <input type="email" value={form.email}
+                    onChange={e => handleChange('email', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Company Website</p>
+                  <input type="text" value={form.companyWebsite}
+                    onChange={e => handleChange('companyWebsite', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Gifting Requirement */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Gifting Requirement</h3>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Purpose of Gifting</p>
+                  <select value={form.purposeOfGifting}
+                    onChange={e => handleChange('purposeOfGifting', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                    <option value="">Select Purpose</option>
+                    {purposeOptions.map((o, i) => <option key={i}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Estimated Quantity</p>
+                  <select value={form.estimatedQuantity}
+                    onChange={e => handleChange('estimatedQuantity', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                    <option value="">Select Quantity</option>
+                    {quantityOptions.map((o, i) => <option key={i}>{o}</option>)}
+                  </select>
+                </div>
+                {form.estimatedQuantity === 'Others' && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Specify Quantity</p>
+                    <input type="text" value={form.others}
+                      onChange={e => handleChange('others', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Required Delivery Date <span className="text-red-400">*</span></p>
+                  <input type="date" value={form.requiredDeliveryDate}
+                    onChange={e => handleChange('requiredDeliveryDate', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.requiredDeliveryDate && <p className="text-xs text-red-400 mt-1">{errors.requiredDeliveryDate}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Delivery Type</p>
+                  <select value={form.deliveryType}
+                    onChange={e => handleChange('deliveryType', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                    <option value="">Select Type</option>
+                    {deliveryTypeOptions.map((o, i) => <option key={i}>{o}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Preferred Items */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Preferred Items</h3>
+              <div className="mb-4">
+                <MultiSelect
+                  label="Preferred Items to Include"
+                  options={productOptions}
+                  selected={form.preferredItems}
+                  onChange={val => handleChange('preferredItems', val)}
+                />
+              </div>
+
+              {form.preferredItems.includes('Other Suggestions') && (
+                <div className="mb-4">
+                  <p className="text-xs text-gray-400 mb-1">Other Suggestions</p>
+                  <textarea rows={3} value={form.otherSuggestions}
+                    onChange={e => handleChange('otherSuggestions', e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
                 </div>
               )}
+
+              {/* Dynamic brand selectors per item */}
+              <div className="grid grid-cols-2 gap-4">
+                {form.preferredItems.filter(item => item !== 'Other Suggestions').map((item, i) => (
+                  <div key={i}>
+                    <MultiSelect
+                      label={`Brands for ${item.split(' ')[0]}`}
+                      options={brandOptionsMap[item] || ['Generic/Unbranded', 'Others']}
+                      selected={form.itemBrands[item] || []}
+                      onChange={val => handleChange('itemBrands', { ...form.itemBrands, [item]: val })}
+                    />
+                    {(form.itemBrands[item] || []).includes('Others') && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-400 mb-1">Other Brands for {item.split(' ')[0]}</p>
+                        <input type="text"
+                          value={form.otherItemBrands[item] || ''}
+                          onChange={e => handleChange('otherItemBrands', { ...form.otherItemBrands, [item]: e.target.value })}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Notes */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Notes / Requests</h3>
-            <textarea rows={4} value={form.specificNotes}
-              onChange={e => handleChange('specificNotes', e.target.value)}
-              placeholder="Any specific notes or requests..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
-          </div>
+            {/* Branding Requirements */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Branding Requirements</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <MultiSelect
+                  label="Branding Requirements"
+                  options={brandingOptions}
+                  selected={form.brandingRequirements}
+                  onChange={val => handleChange('brandingRequirements', val)}
+                />
+                {form.brandingRequirements.includes('Logo Printed') && (
+                  <MultiSelect
+                    label="Select Printing Type"
+                    options={logoPrintedOptions}
+                    selected={form.logoPrintedOptions}
+                    onChange={val => handleChange('logoPrintedOptions', val)}
+                  />
+                )}
+              </div>
+            </div>
 
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 pb-6">
-            <button onClick={() => navigate('/gifting')}
-              className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleSubmit}
-              className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#068BC9' }}>
-              Submit Request
-            </button>
-          </div>
+            {/* Additional Services */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Additional Services</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <MultiSelect
+                  label="Select Additional Services"
+                  options={additionalServiceOptions}
+                  selected={form.additionalServices}
+                  onChange={val => handleChange('additionalServices', val)}
+                />
+                {form.additionalServices.includes('Others') && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Other Additional Services</p>
+                    <textarea rows={3} value={form.otherAdditionalServices}
+                      onChange={e => handleChange('otherAdditionalServices', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Notes / Requests</h3>
+              <textarea rows={4} value={form.specificNotes}
+                onChange={e => handleChange('specificNotes', e.target.value)}
+                placeholder="Any specific notes or requests..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pb-6">
+              <button onClick={() => navigate('/gifting')}
+                className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSubmit} disabled={submitting}
+                className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: '#068BC9' }}>
+                {submitting ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
 
           </div>
         </div>
