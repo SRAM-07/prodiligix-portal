@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { MdCalculate, MdRefresh } from 'react-icons/md';
+import { MdCalculate, MdRefresh, MdAdd, MdDelete } from 'react-icons/md';
 import api from '../services/api';
 
 const transportModes = ['Air', 'Surface'];
-const transporters = ['Bluedart', 'Delhivery'];
-const dimensionUnits = ['cm', 'inch'];
+const transporterOptions = {
+  Surface: ['Delhivery', 'Bluedart'],
+  Air: ['Delhivery', 'Bluedart', 'Indigo', 'Air India', 'Akasa Air', 'Royal King Courier Services'],
+};
+const boxTypeOptions = ['Flyer', 'Envelope Cover', 'Corrugated Box', 'Wooden Box', 'Other'];
+const dimensionUnits = ['cm', 'inch', 'feet'];
+
+function newCard() {
+  return {
+    _uid: Date.now() + Math.random(),
+    count: '',
+    boxType: '',
+    length: '',
+    width: '',
+    height: '',
+  };
+}
 
 export default function RateCalculator() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -22,15 +37,14 @@ export default function RateCalculator() {
     transporter: '',
     actualWeight: '',
     declaredValue: '',
-    noOfBoxes: '',
+    boxQuantity: '',
     dimensionUnit: 'cm',
-    length: '',
-    width: '',
-    height: '',
     insurance: 'yes',
     packaging: 'no',
   });
 
+  const [boxGroups, setBoxGroups] = useState([]);
+  const [currentCards, setCurrentCards] = useState([newCard()]);
   const [result, setResult] = useState(null);
   const [calculated, setCalculated] = useState(false);
 
@@ -48,20 +62,90 @@ export default function RateCalculator() {
     fetchCompanies();
   }, []);
 
-  const volumetricWeight = form.length && form.width && form.height
-    ? ((parseFloat(form.length) * parseFloat(form.width) * parseFloat(form.height)) / 5000).toFixed(2)
-    : 0;
-
-  const scanWeight = Math.max(parseFloat(form.actualWeight) || 0, parseFloat(volumetricWeight) || 0).toFixed(2);
+  const boxesUsed = boxGroups.reduce((sum, g) => sum + Number(g.count || 0), 0);
+  const remainingBoxes = (parseInt(form.boxQuantity) || 0) - boxesUsed;
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setCalculated(false);
+    if (field === 'transportMode') {
+      setForm(prev => ({ ...prev, transporter: '' }));
+    }
   };
 
+  const handleBoxQuantityChange = (value) => {
+    const qty = parseInt(value) || 0;
+    setForm(prev => ({ ...prev, boxQuantity: value }));
+    setBoxGroups([]);
+    setCurrentCards(qty > 0 ? [newCard()] : []);
+    setCalculated(false);
+  };
+
+  const handleCardChange = (i, field, value) => {
+  setCurrentCards(prev => prev.map((c, idx) => {
+    if (idx !== i) return c;
+    let updated = { ...c, [field]: value };
+    if (field === 'count') {
+      const remaining = remainingBoxes + (parseInt(c.count) || 0);
+      const num = parseInt(value);
+      // allow empty/typing freely — only cap the upper bound, no forced minimum while typing
+      if (!isNaN(num) && num > remaining) {
+        updated.count = remaining;
+      } else {
+        updated.count = value;
+      }
+    }
+    return updated;
+  }));
+};
+
+  const canAddFromCard = (card) => (
+    parseInt(card.count) > 0 && parseInt(card.count) <= remainingBoxes &&
+    parseFloat(card.length) > 0 && parseFloat(card.width) > 0 && parseFloat(card.height) > 0 &&
+    card.boxType
+  );
+
+  const addFromCard = (i) => {
+    const card = currentCards[i];
+    setBoxGroups(prev => [...prev, { ...card }]);
+    setCurrentCards(prev => {
+      const rest = prev.filter((_, idx) => idx !== i);
+      const newRemaining = remainingBoxes - card.count;
+      return newRemaining > 0 ? [...rest, newCard()] : rest;
+    });
+    setCalculated(false);
+  };
+
+  const removeGroup = (i) => {
+    setBoxGroups(prev => prev.filter((_, idx) => idx !== i));
+    setCalculated(false);
+  };
+
+  // Divisor matches legacy: 5000 for Air modes, 4000 for Surface/other modes
+  const divisor = ['Air', 'Air Urgent', 'Urgent'].includes(form.transportMode) ? 5000 : 4000;
+
+  const volumetricWeight = boxGroups.reduce((total, g) => {
+    const l = parseFloat(g.length) || 0;
+    const w = parseFloat(g.width) || 0;
+    const h = parseFloat(g.height) || 0;
+    const c = parseFloat(g.count) || 0;
+    return total + (l * w * h * c) / divisor;
+  }, 0).toFixed(2);
+
+  const scanWeight = Math.max(parseFloat(form.actualWeight) || 0, parseFloat(volumetricWeight) || 0).toFixed(2);
+  const rateType = parseFloat(scanWeight) > 20 ? 'B2B Surface' : 'B2C';
+
   const handleCalculate = async () => {
-    if (!form.companyId || !form.pickupPincode || !form.deliveryPincode || !form.actualWeight || !form.transportMode || !form.transporter) {
-      setError('Please fill Company, Pickup/Delivery Pincode, Transport Mode, Transporter and Actual Weight');
+    if (!form.companyId) {
+      setError('Please select a company first');
+      return;
+    }
+    if (parseFloat(scanWeight) <= 0) {
+      setError('Invalid weight');
+      return;
+    }
+    if (!form.pickupPincode || !form.deliveryPincode || !form.transportMode || !form.transporter) {
+      setError('Please fill Pickup/Delivery Pincode, Transport Mode and Transporter');
       return;
     }
     setError('');
@@ -91,28 +175,27 @@ export default function RateCalculator() {
 
   const handleReset = () => {
     setForm({
-      companyId: '',
+      companyId: form.companyId, // keep selected company, matches legacy resetForm behavior
       pickupPincode: '',
       deliveryPincode: '',
       transportMode: '',
       transporter: '',
       actualWeight: '',
       declaredValue: '',
-      noOfBoxes: '',
+      boxQuantity: '',
       dimensionUnit: 'cm',
-      length: '',
-      width: '',
-      height: '',
       insurance: 'yes',
       packaging: 'no',
     });
+    setBoxGroups([]);
+    setCurrentCards([newCard()]);
     setResult(null);
     setCalculated(false);
     setError('');
   };
 
-  const rateType = result?.weight_category === '<= 20kg' ? 'B2C' : 'B2B';
   const totalValue = result ? parseFloat(result.total) : 0;
+  const availableTransporters = transporterOptions[form.transportMode] || [];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -194,9 +277,10 @@ export default function RateCalculator() {
                     <select
                       value={form.transporter}
                       onChange={e => handleChange('transporter', e.target.value)}
+                      disabled={!form.transportMode}
                       className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
                       <option value="">Select Transporter</option>
-                      {transporters.map((t, i) => <option key={i} value={t}>{t}</option>)}
+                      {availableTransporters.map((t, i) => <option key={i} value={t}>{t}</option>)}
                     </select>
                   </div>
                 </div>
@@ -224,14 +308,14 @@ export default function RateCalculator() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-5">
                   <div>
                     <p className="text-xs text-gray-400 mb-1">No. of Boxes</p>
                     <input
                       type="number"
                       placeholder="0"
-                      value={form.noOfBoxes}
-                      onChange={e => handleChange('noOfBoxes', e.target.value)}
+                      value={form.boxQuantity}
+                      onChange={e => handleBoxQuantityChange(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-300"
                     />
                   </div>
@@ -246,39 +330,81 @@ export default function RateCalculator() {
                   </div>
                 </div>
 
-                {/* Dimensions */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Length ({form.dimensionUnit})</p>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={form.length}
-                      onChange={e => handleChange('length', e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-300"
-                    />
+                {/* Box group cards — pending entry */}
+                {remainingBoxes > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Shipment Dimensions (grouped)</p>
+                    {currentCards.map((card, i) => (
+                      <div key={card._uid} className="border border-gray-200 rounded-xl p-4 mb-3 bg-gray-50">
+                        <p className="text-sm font-medium text-gray-700 mb-3">Box group {boxGroups.length + i + 1}</p>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">No. of Boxes</p>
+                            <input
+                              type="number"
+                              value={card.count}
+                              onChange={e => handleCardChange(i, 'count', e.target.value)}
+                              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">Box Type</p>
+                            <select
+                              value={card.boxType}
+                              onChange={e => handleCardChange(i, 'boxType', e.target.value)}
+                              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                              <option value="">Select Box Type</option>
+                              {boxTypeOptions.map((t, ti) => <option key={ti} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          {['length', 'width', 'height'].map(dim => (
+                            <div key={dim}>
+                              <p className="text-xs text-gray-400 mb-1 capitalize">{dim} ({form.dimensionUnit})</p>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={card[dim]}
+                                onChange={e => handleCardChange(i, dim, e.target.value)}
+                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-gray-400">Boxes remaining: {remainingBoxes}</p>
+                          <button
+                            onClick={() => addFromCard(i)}
+                            disabled={!canAddFromCard(card)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40 transition-opacity"
+                            style={{ backgroundColor: '#068BC9' }}>
+                            <MdAdd size={14} /> Add Boxes
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Width ({form.dimensionUnit})</p>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={form.width}
-                      onChange={e => handleChange('width', e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-300"
-                    />
+                )}
+
+                {/* Added box groups */}
+                {boxGroups.length > 0 && (
+                  <div className="mb-5">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Added Box Groups</p>
+                    {boxGroups.map((g, i) => (
+                      <div key={i} className="flex justify-between items-center border border-gray-200 rounded-lg p-3 mb-2">
+                        <div>
+                          <p className="text-sm text-gray-700"><span className="font-semibold">Boxes:</span> {g.count}</p>
+                          <p className="text-xs text-gray-500">Type: {g.boxType}</p>
+                          <p className="text-xs text-gray-500">{g.length} × {g.width} × {g.height} {form.dimensionUnit}</p>
+                        </div>
+                        <button
+                          onClick={() => removeGroup(i)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                          <MdDelete size={16} className="text-red-400" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Height ({form.dimensionUnit})</p>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={form.height}
-                      onChange={e => handleChange('height', e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-300"
-                    />
-                  </div>
-                </div>
+                )}
 
                 {/* Auto calculated */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
@@ -372,15 +498,13 @@ export default function RateCalculator() {
             <div className="col-span-1">
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 sticky top-24">
 
-                {/* Total */}
                 <div className="text-center mb-5">
-                  <p className="text-xs text-gray-400 mb-1">Estimated Rate</p>
+                  <p className="text-xs text-gray-400 mb-1">{form.transportMode || 'Estimated Rate'}</p>
                   <p className="text-4xl font-bold text-gray-800">
                     ₹{calculated && result ? totalValue.toLocaleString() : '0'}
                   </p>
                 </div>
 
-                {/* Price breakdown */}
                 <div className="border-t border-gray-100 pt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3">Price Breakdown</p>
                   {calculated && result ? (
@@ -400,7 +524,6 @@ export default function RateCalculator() {
                         </span>
                       </div>
 
-                      {/* Shipment info */}
                       <div className="mt-3 bg-gray-50 rounded-lg p-3 flex flex-col gap-2">
                         <div className="flex justify-between">
                           <span className="text-xs text-gray-400">Scan Weight</span>
