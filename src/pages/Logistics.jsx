@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync, MdLocalShipping } from 'react-icons/md';
 import api from '../services/api';
 import SetRateDialog from '../components/SetRateDialog';
+import BookWithCarrierDialog from '../components/BookWithCarrierDialog';
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
@@ -37,6 +38,7 @@ export default function Logistics() {
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rateDialogShipment, setRateDialogShipment] = useState(null);
+  const [bookingDialogShipment, setBookingDialogShipment] = useState(null);
   const [syncingId, setSyncingId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
@@ -325,6 +327,15 @@ export default function Logistics() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
+                            {!order.shipmentAwbNumber && (
+                              <button
+                                onClick={() => setBookingDialogShipment(order)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                                style={{ color: '#7c3aed', backgroundColor: '#ede9fe' }}>
+                                <MdLocalShipping size={14} />
+                                Book Carrier
+                              </button>
+                            )}
                             <button
                               onClick={() => setRateDialogShipment(order)}
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
@@ -360,6 +371,14 @@ export default function Logistics() {
           shipmentId={rateDialogShipment.id}
           currentRate={rateDialogShipment.shipmentRate}
           onClose={() => setRateDialogShipment(null)}
+          onSuccess={handleRateSuccess}
+        />
+      )}
+
+      {bookingDialogShipment && (
+        <BookWithCarrierDialog
+          shipment={bookingDialogShipment}
+          onClose={() => setBookingDialogShipment(null)}
           onSuccess={handleRateSuccess}
         />
       )}

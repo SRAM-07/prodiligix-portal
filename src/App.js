@@ -60,6 +60,11 @@ function App() {
             <RateCalculator />
           </ProtectedRoute>
         } />
+        <Route path="/client/rate-calculator" element={
+          <ProtectedRoute allowedRoles={CLIENT_ROLES}>
+            <RateCalculator />
+          </ProtectedRoute>
+        } />
         <Route path="/reports" element={
           <ProtectedRoute allowedRoles={ADMIN_ROLES}>
             <Reports />

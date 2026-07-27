@@ -356,7 +356,7 @@ export default function ClientDashboard() {
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => navigate('/rate-calculator')}
+                onClick={() => navigate('/client/rate-calculator')}
                 className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
                 <span className="text-lg">🧮</span>
                 <span className="text-xs font-medium text-gray-600">Rate Calculator</span>

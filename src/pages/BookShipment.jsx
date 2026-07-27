@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ClientLayout from '../components/ClientLayout';
 import { MdArrowBack, MdAttachFile, MdAdd, MdDelete } from 'react-icons/md';
 import AddressTypeahead from '../components/AddressTypeahead';
+import AddAddressDialog from '../components/AddAddressDialog';
 import { getCurrentUser } from '../services/authService';
 import api from '../services/api';
 
-const transportModes = ['Air', 'Surface', 'Express'];
+const transportModes = ['Air', 'Air Urgent', 'Surface', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 const transporters = ['Bluedart', 'DelhiveryOne', 'NimbusPost'];
-const modeTypes = ['Forward', 'Reverse'];
+const modeTypes = ['Forward', 'Reverse', 'Point to Point'];
 const shipmentDetails = ['Laptops', 'Documents', 'Electronics', 'Mobile Phones', 'Other'];
 const boxTypes = ['Corrugated Box', 'Wooden Box', 'Plastic Box', 'Envelope'];
 const dimensionUnits = ['cms', 'inch', 'feet'];
+const URGENT_OR_MANUAL_MODES = ['Air Urgent', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 
 export default function BookShipment() {
   const navigate = useNavigate();
@@ -22,12 +24,17 @@ export default function BookShipment() {
   const [submitting, setSubmitting] = useState(false);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [ewayFile, setEwayFile] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [showAddAddress, setShowAddAddress] = useState(null); // 'pickup' | 'delivery' | null
+  const [addressRefreshKey, setAddressRefreshKey] = useState(0);
 
   const [form, setForm] = useState({
     pickupAddressId: null,
     pickupAddressText: '',
+    pickupPincode: '',
     deliveryAddressId: null,
     deliveryAddressText: '',
+    deliveryPincode: '',
     transportMode: '',
     transporter: '',
     modeType: 'Forward',
@@ -40,20 +47,32 @@ export default function BookShipment() {
     dimensionUnit: 'cms',
     insurance: 'yes',
     packaging: 'no',
+    manualRate: '',
   });
 
   const [boxes, setBoxes] = useState([
     { id: 1, noOfBoxes: 1, boxType: '', length: '', width: '', height: '' }
   ]);
 
-  const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const [calculatedRate, setCalculatedRate] = useState(null);
+  const [rateLoading, setRateLoading] = useState(false);
+  const [rateError, setRateError] = useState('');
+
+  const isUrgentMode = URGENT_OR_MANUAL_MODES.includes(form.transportMode);
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+  };
 
   const handlePickupSelect = (addr) => {
     setForm(prev => ({
       ...prev,
       pickupAddressId: addr ? addr.id : null,
       pickupAddressText: addr ? addr.address : prev.pickupAddressText,
+      pickupPincode: addr ? addr.zipcode : prev.pickupPincode,
     }));
+    setErrors(prev => ({ ...prev, pickupAddressId: '' }));
   };
 
   const handleDeliverySelect = (addr) => {
@@ -61,11 +80,14 @@ export default function BookShipment() {
       ...prev,
       deliveryAddressId: addr ? addr.id : null,
       deliveryAddressText: addr ? addr.address : prev.deliveryAddressText,
+      deliveryPincode: addr ? addr.zipcode : prev.deliveryPincode,
     }));
+    setErrors(prev => ({ ...prev, deliveryAddressId: '' }));
   };
 
   const handleBoxChange = (id, field, value) => {
     setBoxes(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
+    setErrors(prev => ({ ...prev, boxes: '' }));
   };
 
   const addBoxGroup = () => {
@@ -79,9 +101,10 @@ export default function BookShipment() {
   };
 
   const volumetricWeight = boxes.reduce((total, box) => {
+    const divisor = form.transportMode === 'Air' || form.transportMode === 'Air Urgent' ? 5000 : 4000;
     const v = (parseFloat(box.length) || 0) *
       (parseFloat(box.width) || 0) *
-      (parseFloat(box.height) || 0) / 5000;
+      (parseFloat(box.height) || 0) * (parseFloat(box.noOfBoxes) || 1) / divisor;
     return total + v;
   }, 0).toFixed(2);
 
@@ -90,16 +113,81 @@ export default function BookShipment() {
     parseFloat(volumetricWeight) || 0
   ).toFixed(2);
 
-  const rateType = parseFloat(form.declaredValue) > 10000 ? 'B2B' : 'B2C';
-  const finalRate = (parseFloat(scanWeight) * 45 * 1.18).toFixed(2);
+  const rateType = parseFloat(scanWeight) > 10 ? 'B2B' : 'B2C';
 
   const totalBoxQuantity = boxes.reduce((sum, b) => sum + (parseInt(b.noOfBoxes) || 0), 0);
 
-  const handleSubmit = async () => {
-    if (!form.pickupAddressId || !form.deliveryAddressId || !form.actualWeight) {
-      alert('Please select a Pickup Address, Delivery Address and enter Actual Weight');
+  useEffect(() => {
+    const canCalculate =
+      !isUrgentMode &&
+      form.pickupPincode && form.pickupPincode.length === 6 &&
+      form.deliveryPincode && form.deliveryPincode.length === 6 &&
+      form.transportMode && form.transporter &&
+      parseFloat(scanWeight) > 0;
+
+    if (!canCalculate) {
+      setCalculatedRate(null);
+      setRateError('');
       return;
     }
+
+    const timeout = setTimeout(async () => {
+      setRateLoading(true);
+      setRateError('');
+      try {
+        const params = new URLSearchParams({
+          fromPincode: form.pickupPincode,
+          toPincode: form.deliveryPincode,
+          weight: scanWeight,
+          mode: form.transportMode.toLowerCase(),
+          declaredValue: form.declaredValue || 0,
+          insurance: form.insurance === 'yes',
+          packageRequired: form.packaging === 'yes',
+          provider: form.transporter,
+          companyId: companyId,
+        });
+        const res = await api.get(`/api/shipments/calculate-rate?${params.toString()}`);
+        setCalculatedRate(res.data.charges?.total || null);
+      } catch (err) {
+        setRateError('Unable to calculate rate automatically — will be set manually after booking.');
+        setCalculatedRate(null);
+      } finally {
+        setRateLoading(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(timeout);
+  }, [isUrgentMode, form.pickupPincode, form.deliveryPincode, form.transportMode, form.transporter,
+      form.declaredValue, form.insurance, form.packaging, scanWeight, companyId]);
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!form.pickupAddressId) newErrors.pickupAddressId = 'Pickup address is required';
+    if (!form.deliveryAddressId) newErrors.deliveryAddressId = 'Delivery address is required';
+    if (!form.transportMode) newErrors.transportMode = 'Transport mode is required';
+    if (!form.transporter) newErrors.transporter = 'Transporter is required';
+    if (!form.declaredValue || parseFloat(form.declaredValue) <= 0) newErrors.declaredValue = 'Declared value is required';
+    if (!form.shipmentDetail) newErrors.shipmentDetail = 'Shipment detail type is required';
+    if (!form.shipmentDescription.trim()) newErrors.shipmentDescription = 'Description is required';
+    if (!form.actualWeight || parseFloat(form.actualWeight) <= 0) newErrors.actualWeight = 'Actual weight is required';
+    if (!form.noOfBoxes || parseInt(form.noOfBoxes) < 1) newErrors.noOfBoxes = 'Number of boxes is required';
+
+    const incompleteBox = boxes.some(b =>
+      !b.boxType || !b.length || !b.width || !b.height || !b.noOfBoxes || parseInt(b.noOfBoxes) < 1
+    );
+    if (incompleteBox) newErrors.boxes = 'Please fill box type and all dimensions for every box group';
+
+    if (isUrgentMode && (!form.manualRate || parseFloat(form.manualRate) <= 0)) {
+      newErrors.manualRate = 'Please enter the final rate for this shipment';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
 
     setSubmitting(true);
     try {
@@ -120,10 +208,14 @@ export default function BookShipment() {
         scanWeight: parseFloat(scanWeight),
         insuranceRequired: form.insurance === 'yes',
         packageRequired: form.packaging === 'yes',
-        modes: form.modeType.toLowerCase(),
+        modes: form.modeType.toLowerCase().replace(/\s+/g, ''),
         transporter: form.transporter,
         sourceType: 'wallet',
       };
+
+      if (isUrgentMode) {
+        payload.shipmentRate = parseFloat(form.manualRate);
+      }
 
       await api.post('/api/shipments', payload);
 
@@ -197,18 +289,24 @@ export default function BookShipment() {
               <div className="flex gap-2 items-start">
                 <div className="flex-1">
                   <AddressTypeahead
+                    key={`pickup-${addressRefreshKey}`}
                     companyId={companyId}
                     type="pickup"
+                    value={form.pickupAddressText}
                     onSelect={handlePickupSelect}
                     placeholder="Type to search pickup address..."
                   />
                 </div>
                 <button
-                  onClick={() => alert('Add new pickup address — coming soon!')}
+                  onClick={() => setShowAddAddress('pickup')}
                   className="flex-shrink-0 flex items-center gap-1 px-3 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-500 transition-colors">
                   <MdAdd size={16} /> Add
                 </button>
               </div>
+              {errors.pickupAddressId && <p className="text-xs text-red-400 mt-1">{errors.pickupAddressId}</p>}
+              {form.pickupPincode && (
+  <p className="text-xs text-gray-400 mt-1">Pincode: {form.pickupPincode}</p>
+)}
             </div>
 
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -218,18 +316,24 @@ export default function BookShipment() {
               <div className="flex gap-2 items-start">
                 <div className="flex-1">
                   <AddressTypeahead
+                    key={`delivery-${addressRefreshKey}`}
                     companyId={companyId}
                     type="delivery"
+                    value={form.deliveryAddressText}
                     onSelect={handleDeliverySelect}
                     placeholder="Type to search delivery address..."
                   />
                 </div>
                 <button
-                  onClick={() => alert('Add new delivery address — coming soon!')}
+                  onClick={() => setShowAddAddress('delivery')}
                   className="flex-shrink-0 flex items-center gap-1 px-3 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-500 transition-colors">
                   <MdAdd size={16} /> Add
                 </button>
               </div>
+              {errors.deliveryAddressId && <p className="text-xs text-red-400 mt-1">{errors.deliveryAddressId}</p>}
+              {form.deliveryPincode && (
+  <p className="text-xs text-gray-400 mt-1">Pincode: {form.deliveryPincode}</p>
+)}
             </div>
           </div>
 
@@ -237,7 +341,7 @@ export default function BookShipment() {
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Transport Mode</p>
+                <p className="text-xs text-gray-400 mb-1">Transport Mode <span className="text-red-400">*</span></p>
                 <select
                   value={form.transportMode}
                   onChange={e => handleChange('transportMode', e.target.value)}
@@ -245,9 +349,10 @@ export default function BookShipment() {
                   <option value="">Select Mode</option>
                   {transportModes.map((m, i) => <option key={i}>{m}</option>)}
                 </select>
+                {errors.transportMode && <p className="text-xs text-red-400 mt-1">{errors.transportMode}</p>}
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Transporter</p>
+                <p className="text-xs text-gray-400 mb-1">Transporter <span className="text-red-400">*</span></p>
                 <select
                   value={form.transporter}
                   onChange={e => handleChange('transporter', e.target.value)}
@@ -255,6 +360,7 @@ export default function BookShipment() {
                   <option value="">Select Transporter</option>
                   {transporters.map((t, i) => <option key={i}>{t}</option>)}
                 </select>
+                {errors.transporter && <p className="text-xs text-red-400 mt-1">{errors.transporter}</p>}
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Mode Type</p>
@@ -272,13 +378,14 @@ export default function BookShipment() {
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Shipment Declared Value</p>
+                <p className="text-xs text-gray-400 mb-1">Shipment Declared Value <span className="text-red-400">*</span></p>
                 <input
                   type="number"
                   placeholder="Enter declared value"
                   value={form.declaredValue}
                   onChange={e => handleChange('declaredValue', e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                {errors.declaredValue && <p className="text-xs text-red-400 mt-1">{errors.declaredValue}</p>}
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Invoice / Delivery Challan No.</p>
@@ -292,7 +399,7 @@ export default function BookShipment() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Shipment Details</p>
+                <p className="text-xs text-gray-400 mb-1">Shipment Details <span className="text-red-400">*</span></p>
                 <select
                   value={form.shipmentDetail}
                   onChange={e => handleChange('shipmentDetail', e.target.value)}
@@ -300,15 +407,17 @@ export default function BookShipment() {
                   <option value="">Select Type</option>
                   {shipmentDetails.map((s, i) => <option key={i}>{s}</option>)}
                 </select>
+                {errors.shipmentDetail && <p className="text-xs text-red-400 mt-1">{errors.shipmentDetail}</p>}
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Shipment Details Description</p>
+                <p className="text-xs text-gray-400 mb-1">Shipment Details Description <span className="text-red-400">*</span></p>
                 <input
                   type="text"
                   placeholder="Enter description"
                   value={form.shipmentDescription}
                   onChange={e => handleChange('shipmentDescription', e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                {errors.shipmentDescription && <p className="text-xs text-red-400 mt-1">{errors.shipmentDescription}</p>}
               </div>
             </div>
           </div>
@@ -336,7 +445,6 @@ export default function BookShipment() {
               </div>
             </div>
 
-            {/* E-Way Bill — shown only when declared value > 49000 */}
             {parseFloat(form.declaredValue) > 49000 && (
               <div className="mt-4">
                 <p className="text-xs text-gray-400 mb-2">
@@ -369,15 +477,17 @@ export default function BookShipment() {
                   value={form.actualWeight}
                   onChange={e => handleChange('actualWeight', e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                {errors.actualWeight && <p className="text-xs text-red-400 mt-1">{errors.actualWeight}</p>}
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">No. of Boxes</p>
+                <p className="text-xs text-gray-400 mb-1">No. of Boxes <span className="text-red-400">*</span></p>
                 <input
                   type="number"
                   min="1"
                   value={form.noOfBoxes}
                   onChange={e => handleChange('noOfBoxes', e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                {errors.noOfBoxes && <p className="text-xs text-red-400 mt-1">{errors.noOfBoxes}</p>}
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Dimension Unit</p>
@@ -392,20 +502,42 @@ export default function BookShipment() {
 
             {/* Final Rate */}
             <div className="flex justify-end mb-5">
-              <div
-                className="rounded-xl px-8 py-3 text-center text-white"
-                style={{ backgroundColor: parseFloat(form.actualWeight) > 0 ? '#22c55e' : '#ef4444' }}>
-                <p className="text-xs opacity-80">Final Rate</p>
-                <p className="text-2xl font-bold">
-                  {parseFloat(form.actualWeight) > 0 ? `₹${finalRate}` : '0.00'}
-                </p>
-              </div>
+              {isUrgentMode ? (
+                <div className="w-64">
+                  <p className="text-xs text-gray-400 mb-1">
+                    Final Rate (Manual Entry) <span className="text-red-400">*</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mb-2">
+                    No automatic pricing available for this mode — enter the agreed rate.
+                  </p>
+                  <input
+                    type="number"
+                    placeholder="Enter final rate"
+                    value={form.manualRate}
+                    onChange={e => handleChange('manualRate', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.manualRate && <p className="text-xs text-red-400 mt-1">{errors.manualRate}</p>}
+                </div>
+              ) : (
+                <div
+                  className="rounded-xl px-8 py-3 text-center text-white min-w-[160px]"
+                  style={{ backgroundColor: rateLoading ? '#9ca3af' : calculatedRate ? '#22c55e' : '#ef4444' }}>
+                  <p className="text-xs opacity-80">Final Rate</p>
+                  <p className="text-2xl font-bold">
+                    {rateLoading ? '...' : calculatedRate ? `₹${parseFloat(calculatedRate).toFixed(2)}` : '—'}
+                  </p>
+                  {rateError && (
+                    <p className="text-xs opacity-90 mt-1">{rateError}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Box groups */}
-            <p className="text-sm font-semibold text-gray-700 mb-3">
-              Shipment Dimensions (grouped)
+            <p className="text-sm font-semibold text-gray-700 mb-1">
+              Shipment Dimensions (grouped) <span className="text-red-400">*</span>
             </p>
+            {errors.boxes && <p className="text-xs text-red-400 mb-2">{errors.boxes}</p>}
 
             {boxes.map((box, i) => (
               <div key={box.id} className="border border-gray-200 rounded-xl p-4 mb-3 bg-gray-50">
@@ -546,6 +678,21 @@ export default function BookShipment() {
 
         </div>
       </div>
+
+      {showAddAddress && (
+        <AddAddressDialog
+          type={showAddAddress}
+          onClose={() => setShowAddAddress(null)}
+          onSuccess={(newAddress) => {
+            if (showAddAddress === 'pickup') {
+              handlePickupSelect(newAddress);
+            } else {
+              handleDeliverySelect(newAddress);
+            }
+            setAddressRefreshKey(prev => prev + 1);
+          }}
+        />
+      )}
     </ClientLayout>
   );
 }

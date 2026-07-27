@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import { MdCalculate, MdRefresh, MdAdd, MdDelete } from 'react-icons/md';
 import api from '../services/api';
 
@@ -199,7 +199,7 @@ export default function RateCalculator() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
