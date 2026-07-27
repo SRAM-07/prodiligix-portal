@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync } from 'react-icons/md';
 import api from '../services/api';
 import SetRateDialog from '../components/SetRateDialog';
 
@@ -37,6 +37,7 @@ export default function Logistics() {
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rateDialogShipment, setRateDialogShipment] = useState(null);
+  const [syncingId, setSyncingId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
 
@@ -80,6 +81,20 @@ export default function Logistics() {
   const handleRateSuccess = (message) => {
     setToast(message);
     fetchShipments();
+  };
+
+  const handleSyncTracking = async (shipmentId) => {
+    setSyncingId(shipmentId);
+    try {
+      const res = await api.post(`/api/shipments/${shipmentId}/sync-tracking`);
+      setToast(res.data.message || 'Tracking synced successfully');
+      fetchShipments();
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to sync tracking';
+      setToast(message);
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   if (loading) {
@@ -309,13 +324,25 @@ export default function Logistics() {
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <button
-                            onClick={() => setRateDialogShipment(order)}
-                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                            style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
-                            <MdAttachMoney size={14} />
-                            {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setRateDialogShipment(order)}
+                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                              style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                              <MdAttachMoney size={14} />
+                              {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
+                            </button>
+                            {order.shipmentAwbNumber && (
+                              <button
+                                onClick={() => handleSyncTracking(order.id)}
+                                disabled={syncingId === order.id}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
+                                <MdSync size={14} className={syncingId === order.id ? 'animate-spin' : ''} />
+                                {syncingId === order.id ? 'Syncing...' : 'Sync'}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
