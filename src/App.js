@@ -144,6 +144,11 @@ function App() {
             <BookShipment />
           </ProtectedRoute>
         } />
+        <Route path="/client/logistics/:id" element={
+          <ProtectedRoute allowedRoles={CLIENT_ROLES}>
+            <OrderDetail />
+          </ProtectedRoute>
+        } />
         <Route path="/client/bulk-upload" element={
           <ProtectedRoute allowedRoles={CLIENT_ROLES}>
             <BulkUpload />

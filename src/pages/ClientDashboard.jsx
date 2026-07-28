@@ -7,7 +7,7 @@ import {
 } from 'react-icons/md';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer
+  Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
@@ -19,6 +19,7 @@ export default function ClientDashboard() {
   const [statusCounts, setStatusCounts] = useState(null);
   const [walletData, setWalletData] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
+  const [weeklyByService, setWeeklyByService] = useState([]);
   const [hoveredService, setHoveredService] = useState(null);
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -27,11 +28,12 @@ export default function ClientDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [shipmentRes, walletRes, weeklyRes, statusRes] = await Promise.all([
+        const [shipmentRes, walletRes, weeklyRes, statusRes, weeklyByServiceRes] = await Promise.all([
           api.get(`/api/dashboard/user-shipment-bookings/${companyId}`),
           api.get(`/api/wallet/balance/${companyId}`),
           api.get(`/api/dashboard/weekly-stats/${companyId}`),
-          api.get(`/api/dashboard/request-status-counts/${companyId}`)
+          api.get(`/api/dashboard/request-status-counts/${companyId}`),
+          api.get(`/api/dashboard/weekly-by-service/${companyId}`)
         ]);
 
         setShipmentStats(shipmentRes.data);
@@ -44,6 +46,18 @@ export default function ClientDashboard() {
           date: date.split('-').slice(1).join('/'),
           count: counts[i] || 0,
         })));
+
+        const serviceData = weeklyByServiceRes.data;
+        const serviceDates = serviceData.dates || [];
+        const combined = serviceDates.map((date, i) => ({
+          date: date.split('-').slice(1).join('/'),
+          Logistics: serviceData['Logistic Management Services']?.[i] || 0,
+          'Stamp Paper': serviceData['Stamp Paper Procurement']?.[i] || 0,
+          'Corporate Gifting': serviceData['Corporate Gifting']?.[i] || 0,
+          Events: serviceData['Event Management']?.[i] || 0,
+          'IT Solutions': serviceData['IT Solutions']?.[i] || 0,
+        }));
+        setWeeklyByService(combined);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -200,7 +214,7 @@ export default function ClientDashboard() {
         <div>
           <p className="text-gray-400 text-xs">Welcome back,</p>
           <h2 className="text-sm font-bold text-gray-800">
-            Rapido — {user?.role === 'company_admin' ? 'Admin' : 'Frontdesk'}
+            Rapido  {user?.role === 'company_admin' ? 'Admin' : 'Frontdesk'}
           </h2>
         </div>
         <div className="flex items-center gap-3">
@@ -220,7 +234,6 @@ export default function ClientDashboard() {
               Search
             </button>
           </div>
-          <p className="text-xs font-medium text-gray-600">Roppen Transportation Service Pvt. Ltd.</p>
         </div>
       </div>
 
@@ -300,20 +313,24 @@ export default function ClientDashboard() {
         {/* Bottom row */}
         <div className="grid grid-cols-3 gap-5">
 
-          {/* Weekly chart */}
+          {/* Weekly chart — now shows all 5 services, color-coded */}
           <div className="col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="mb-4">
               <p className="text-sm font-semibold text-gray-700">Weekly Service Requests</p>
-              <p className="text-xs text-gray-400">Last 7 days — Logistics</p>
+              <p className="text-xs text-gray-400">Last 7 days — All Services</p>
             </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={weeklyData}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={weeklyByService}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} />
-                <Bar dataKey="count" fill="#068BC9" radius={[4, 4, 0, 0]}
-                  label={{ position: 'top', fontSize: 10, fill: '#9ca3af' }} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Bar dataKey="Logistics" fill="#068BC9" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Stamp Paper" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Corporate Gifting" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Events" fill="#f97316" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="IT Solutions" fill="#06b6d4" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -65,11 +65,15 @@ export default function BookShipment() {
     setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
+  const formatFullAddress = (addr) => {
+    return [addr.facilityName, addr.address, addr.city, addr.state, addr.zipcode].filter(Boolean).join(', ');
+  };
+
   const handlePickupSelect = (addr) => {
     setForm(prev => ({
       ...prev,
       pickupAddressId: addr ? addr.id : null,
-      pickupAddressText: addr ? addr.address : prev.pickupAddressText,
+      pickupAddressText: addr ? formatFullAddress(addr) : prev.pickupAddressText,
       pickupPincode: addr ? addr.zipcode : prev.pickupPincode,
     }));
     setErrors(prev => ({ ...prev, pickupAddressId: '' }));
@@ -79,7 +83,7 @@ export default function BookShipment() {
     setForm(prev => ({
       ...prev,
       deliveryAddressId: addr ? addr.id : null,
-      deliveryAddressText: addr ? addr.address : prev.deliveryAddressText,
+      deliveryAddressText: addr ? formatFullAddress(addr) : prev.deliveryAddressText,
       deliveryPincode: addr ? addr.zipcode : prev.deliveryPincode,
     }));
     setErrors(prev => ({ ...prev, deliveryAddressId: '' }));
@@ -217,10 +221,16 @@ export default function BookShipment() {
         payload.shipmentRate = parseFloat(form.manualRate);
       }
 
-      await api.post('/api/shipments', payload);
-
+      const response = await api.post('/api/shipments', payload);
       setSubmitted(true);
-      setTimeout(() => navigate('/client/logistics'), 2500);
+      const newShipmentId = response.data.id;
+      setTimeout(() => {
+        if (newShipmentId) {
+          navigate(`/client/logistics/${newShipmentId}`);
+        } else {
+          navigate('/client/logistics');
+        }
+      }, 2000);
     } catch (error) {
       console.error('Failed to create shipment:', error);
       const message = error.response?.data?.message || error.response?.data?.error || 'Failed to book shipment. Please try again.';
@@ -240,8 +250,8 @@ export default function BookShipment() {
           </div>
           <h2 className="text-lg font-bold text-gray-800 mb-2">Shipment Booked Successfully!</h2>
           <p className="text-sm text-gray-400 mb-1">Your shipment request has been submitted.</p>
-          <p className="text-sm text-gray-400">ProDiligix team will process it shortly.</p>
-          <p className="text-xs text-gray-300 mt-4">Redirecting to orders...</p>
+          <p className="text-sm text-gray-400">Taking you to the shipment details...</p>
+          <p className="text-xs text-gray-300 mt-4">Redirecting...</p>
         </div>
       </div>
     );
@@ -289,12 +299,12 @@ export default function BookShipment() {
               <div className="flex gap-2 items-start">
                 <div className="flex-1">
                   <AddressTypeahead
-                    key={`pickup-${addressRefreshKey}`}
                     companyId={companyId}
                     type="pickup"
                     value={form.pickupAddressText}
                     onSelect={handlePickupSelect}
                     placeholder="Type to search pickup address..."
+                    refreshTrigger={addressRefreshKey}
                   />
                 </div>
                 <button
@@ -305,8 +315,8 @@ export default function BookShipment() {
               </div>
               {errors.pickupAddressId && <p className="text-xs text-red-400 mt-1">{errors.pickupAddressId}</p>}
               {form.pickupPincode && (
-  <p className="text-xs text-gray-400 mt-1">Pincode: {form.pickupPincode}</p>
-)}
+                <p className="text-xs text-gray-400 mt-1">Pincode: {form.pickupPincode}</p>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -316,12 +326,12 @@ export default function BookShipment() {
               <div className="flex gap-2 items-start">
                 <div className="flex-1">
                   <AddressTypeahead
-                    key={`delivery-${addressRefreshKey}`}
                     companyId={companyId}
                     type="delivery"
                     value={form.deliveryAddressText}
                     onSelect={handleDeliverySelect}
                     placeholder="Type to search delivery address..."
+                    refreshTrigger={addressRefreshKey}
                   />
                 </div>
                 <button
@@ -332,8 +342,8 @@ export default function BookShipment() {
               </div>
               {errors.deliveryAddressId && <p className="text-xs text-red-400 mt-1">{errors.deliveryAddressId}</p>}
               {form.deliveryPincode && (
-  <p className="text-xs text-gray-400 mt-1">Pincode: {form.deliveryPincode}</p>
-)}
+                <p className="text-xs text-gray-400 mt-1">Pincode: {form.deliveryPincode}</p>
+              )}
             </div>
           </div>
 

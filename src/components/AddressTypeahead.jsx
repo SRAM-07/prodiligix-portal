@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MdSearch, MdLocationOn } from 'react-icons/md';
 import api from '../services/api';
 
-export default function AddressTypeahead({ companyId, type, value, onSelect, placeholder }) {
+export default function AddressTypeahead({ companyId, type, value, onSelect, placeholder, refreshTrigger }) {
   const [query, setQuery] = useState(value || '');
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ export default function AddressTypeahead({ companyId, type, value, onSelect, pla
       }
     };
     fetchAddresses();
-  }, [companyId]);
+  }, [companyId, refreshTrigger]);
 
   useEffect(() => {
     setQuery(value || '');

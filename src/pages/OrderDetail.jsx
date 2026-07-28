@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import SmartSidebar from '../components/SmartSidebar';
 import {
   MdArrowBack, MdDownload, MdAttachFile,
   MdLocalShipping, MdLocationOn, MdInventory,
   MdCheckCircle, MdUpload, MdSync
 } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const statusConfig = {
   'Booked': { color: '#068BC9', bg: '#e0f2fe' },
@@ -21,6 +22,9 @@ const statusConfig = {
 export default function OrderDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const user = getCurrentUser();
+  const isClient = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+  const listPath = isClient ? '/client/logistics' : '/logistics';
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
 
@@ -129,7 +133,7 @@ export default function OrderDetail() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar onToggle={setSidebarExpanded} />
+      <SmartSidebar onToggle={setSidebarExpanded} />
 
       <div
         className="flex-1 transition-all duration-300"
@@ -138,7 +142,7 @@ export default function OrderDetail() {
         {/* Topbar */}
         <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
           <button
-            onClick={() => navigate('/logistics')}
+            onClick={() => navigate(listPath)}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <MdArrowBack size={20} className="text-gray-600"/>
           </button>
@@ -346,7 +350,7 @@ export default function OrderDetail() {
               {/* Action buttons */}
               <div className="flex justify-end gap-3 pb-4">
                 <button
-                  onClick={() => navigate('/logistics')}
+                  onClick={() => navigate(listPath)}
                   className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
                   Back to List
                 </button>

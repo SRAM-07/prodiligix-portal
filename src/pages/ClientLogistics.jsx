@@ -192,7 +192,8 @@ export default function ClientLogistics() {
                   return (
                     <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-bold whitespace-nowrap cursor-pointer hover:underline"
-                        style={{ color: idColor }}>
+                        style={{ color: idColor }}
+                        onClick={() => navigate(`/client/logistics/${order.id}`)}>
                         {order.serviceRequestId}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode || '—'}</td>
