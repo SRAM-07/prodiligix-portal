@@ -7,18 +7,10 @@ import {
 } from 'react-icons/md';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, RadialBarChart, RadialBar
+  Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, Legend
 } from 'recharts';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
-
-const actionItems = [
-  { label: 'High Risk Orders', value: 3, color: '#ef4444' },
-  { label: 'Bad Addresses', value: 5, color: '#f97316' },
-  { label: 'Pending Pickup', value: 12, color: '#068BC9' },
-  { label: 'To Be Shipped', value: 8, color: '#8b5cf6' },
-  { label: 'Exceptions & NDR', value: 14, color: '#ef4444' },
-];
 
 function ServiceCard({ title, path, total, items, navigate }) {
   return (
@@ -74,6 +66,7 @@ export default function Dashboard() {
   const [statusCounts, setStatusCounts] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionRequired, setActionRequired] = useState({ paymentPending: 0, noAwbSet: 0, exceptions: 0 });
   const navigate = useNavigate();
   const user = getCurrentUser();
 
@@ -81,18 +74,31 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const companyId = 1;
-        const [statusRes, weeklyRes] = await Promise.all([
+        const [statusRes, weeklyRes, shipmentsRes] = await Promise.all([
           api.get(`/api/dashboard/request-status-counts/${companyId}`),
-          api.get(`/api/dashboard/weekly-by-service/${companyId}`)
+          api.get(`/api/dashboard/weekly-by-service/${companyId}`),
+          api.get('/api/shipments')
         ]);
         setStatusCounts(statusRes.data);
+
         const dates = weeklyRes.data.dates || [];
         const formatted = dates.map((date, i) => ({
           day: date.split('-').slice(1).join('/'),
-          logistics: weeklyRes.data['Logistic Management Services']?.[i] || 0,
-          stampPaper: weeklyRes.data['Stamp Paper Procurement']?.[i] || 0,
+          Logistics: weeklyRes.data['Logistic Management Services']?.[i] || 0,
+          'Stamp Paper': weeklyRes.data['Stamp Paper Procurement']?.[i] || 0,
+          'Corporate Gifting': weeklyRes.data['Corporate Gifting']?.[i] || 0,
+          Events: weeklyRes.data['Event Management']?.[i] || 0,
+          'IT Solutions': weeklyRes.data['IT Solutions']?.[i] || 0,
         }));
         setWeeklyData(formatted);
+
+        const shipments = shipmentsRes.data || [];
+        const activeShipments = shipments.filter(s => s.deliveryStatus !== 'Cancelled');
+        setActionRequired({
+          paymentPending: activeShipments.filter(s => !s.requestApproved).length,
+          noAwbSet: activeShipments.filter(s => !s.shipmentAwbNumber).length,
+          exceptions: activeShipments.filter(s => s.deliveryStatus === 'Exception').length,
+        });
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -118,6 +124,12 @@ export default function Dashboard() {
     { label: 'Delivered', value: delivered, icon: <MdCheckCircle size={22} />, color: '#22c55e', bg: '#dcfce7', delta: '+8%', up: true },
     { label: 'Pending', value: pending, icon: <MdPending size={22} />, color: '#f97316', bg: '#ffedd5', delta: '-3%', up: false },
     { label: 'Exceptions', value: exceptions, icon: <MdWarning size={22} />, color: '#ef4444', bg: '#fee2e2', delta: '+2%', up: false },
+  ];
+
+  const actionItems = [
+    { label: 'Payment Pending', value: actionRequired.paymentPending, color: '#f97316' },
+    { label: 'No AWB Set', value: actionRequired.noAwbSet, color: '#068BC9' },
+    { label: 'Exceptions', value: actionRequired.exceptions, color: '#ef4444' },
   ];
 
   const serviceData = [
@@ -235,62 +247,64 @@ export default function Dashboard() {
               <MdWarning size={16} color="#f97316" />
               <h3 className="font-semibold text-gray-700 text-sm">Action Required</h3>
             </div>
-            <div className="grid grid-cols-5 divide-x divide-gray-100">
+            <div className="grid grid-cols-3 divide-x divide-gray-100">
               {actionItems.map((item, i) => (
                 <div key={i} className="text-center px-4">
                   <p className="text-xs text-gray-400 mb-1">{item.label}</p>
                   <p className="text-2xl font-bold" style={{ color: item.color }}>{item.value}</p>
-                  <p className="text-xs mt-1 cursor-pointer font-medium" style={{ color: item.color }}>Act Now →</p>
+                  {item.value > 0 && (
+                    <p
+                      className="text-xs mt-1 cursor-pointer font-medium"
+                      style={{ color: item.color }}
+                      onClick={() => navigate('/logistics')}>
+                      Act Now →
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Performance Trend */}
+          {/* Performance Trend — now all 5 services */}
           <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-5">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h3 className="font-semibold text-gray-700 text-sm">Performance Trend</h3>
-                <p className="text-xs text-gray-400">Last 7 days</p>
-              </div>
-              <div className="flex gap-4">
-                {[
-                  { label: 'Logistics', color: '#22c55e' },
-                  { label: 'Stamp Paper', color: '#068BC9' },
-                ].map((l, i) => (
-                  <span key={i} className="flex items-center gap-1 text-xs text-gray-400">
-                    <span className="w-2 h-2 rounded-full inline-block" style={{ background: l.color }} />
-                    {l.label}
-                  </span>
-                ))}
-              </div>
+            <div className="mb-3">
+              <h3 className="font-semibold text-gray-700 text-sm">Performance Trend</h3>
+              <p className="text-xs text-gray-400">Last 7 days — All Services</p>
             </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={weeklyData.length > 0 ? weeklyData : [
-                { day: 'Mon', logistics: 0, stampPaper: 0 },
-                { day: 'Tue', logistics: 0, stampPaper: 0 },
-                { day: 'Wed', logistics: 0, stampPaper: 0 },
-                { day: 'Thu', logistics: 0, stampPaper: 0 },
-                { day: 'Fri', logistics: 0, stampPaper: 0 },
-                { day: 'Sat', logistics: 0, stampPaper: 0 },
-                { day: 'Sun', logistics: 0, stampPaper: 0 },
-              ]}>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={weeklyData.length > 0 ? weeklyData : []}>
                 <defs>
                   <linearGradient id="colorLogistics" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#068BC9" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#068BC9" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorStampPaper" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorGifting" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorStampPaper" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#068BC9" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#068BC9" stopOpacity={0} />
+                  <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorIT" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
                 <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="logistics" stroke="#22c55e" strokeWidth={2} fill="url(#colorLogistics)" dot={false} />
-                <Area type="monotone" dataKey="stampPaper" stroke="#068BC9" strokeWidth={2} fill="url(#colorStampPaper)" dot={false} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Area type="monotone" dataKey="Logistics" stroke="#068BC9" strokeWidth={2} fill="url(#colorLogistics)" dot={false} />
+                <Area type="monotone" dataKey="Stamp Paper" stroke="#8b5cf6" strokeWidth={2} fill="url(#colorStampPaper)" dot={false} />
+                <Area type="monotone" dataKey="Corporate Gifting" stroke="#22c55e" strokeWidth={2} fill="url(#colorGifting)" dot={false} />
+                <Area type="monotone" dataKey="Events" stroke="#f97316" strokeWidth={2} fill="url(#colorEvents)" dot={false} />
+                <Area type="monotone" dataKey="IT Solutions" stroke="#06b6d4" strokeWidth={2} fill="url(#colorIT)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
