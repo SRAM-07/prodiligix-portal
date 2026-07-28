@@ -8,7 +8,7 @@ import {
 } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
-
+import CancelShipmentDialog from '../components/CancelShipmentDialog';
 const statusConfig = {
   'Booked': { color: '#068BC9', bg: '#e0f2fe' },
   'In Transit': { color: '#1d4ed8', bg: '#dbeafe' },
@@ -34,6 +34,7 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const tabs = ['details', 'documents', 'tracking'];
 
@@ -349,6 +350,13 @@ export default function OrderDetail() {
 
               {/* Action buttons */}
               <div className="flex justify-end gap-3 pb-4">
+                {shipment.deliveryStatus === 'Booked' && (
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="px-6 py-2.5 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50 transition-colors">
+                    Cancel Shipment
+                  </button>
+                )}
                 <button
                   onClick={() => navigate(listPath)}
                   className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -485,6 +493,17 @@ export default function OrderDetail() {
 
         </div>
       </div>
+
+      {showCancelDialog && (
+        <CancelShipmentDialog
+          shipmentId={id}
+          onClose={() => setShowCancelDialog(false)}
+          onSuccess={(message) => {
+            setToast(message);
+            fetchAll();
+          }}
+        />
+      )}
     </div>
   );
 }

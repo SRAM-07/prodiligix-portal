@@ -3,6 +3,7 @@ import SmartSidebar from '../components/SmartSidebar';
 import { MdDownload, MdFilterList, MdRefresh, MdSearch, MdClose } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
+import * as XLSX from 'xlsx';
 
 const tabs = [
   { key: 'logistics', label: 'Logistics Management' },
@@ -150,7 +151,110 @@ export default function Reports() {
   }, []);
 
   const handleDownload = () => {
-    alert(`Downloading MIS Report for ${tabs.find(t => t.key === activeTab)?.label}...`);
+    let dataToExport = [];
+    let filename = 'report';
+
+    if (activeTab === 'logistics') {
+      dataToExport = logisticsData.map(r => {
+        const row = {
+          'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
+          'Service Request ID': r.serviceRequestId,
+          'Company ID': r.companyId,
+          'Modes': r.modes,
+          'Transport Mode': r.transportMode,
+          'Delivery Partner': r.transporter,
+          'Delivery Status': r.deliveryStatus,
+          'Shipment Detail': r.shipmentDetails,
+          'Declared Value': r.shipmentDeclaredValue,
+          'Actual Weight': r.actualWeight,
+          'Scan Weight': r.scanWeight,
+          'No. of Boxes': r.boxQuantity,
+          'AWB Number': r.shipmentAwbNumber,
+        };
+        if (!isCompanyAdmin) {
+          row['Insurance Required'] = r.insuranceRequired ? 'Yes' : 'No';
+          row['Package Required'] = r.packageRequired ? 'Yes' : 'No';
+        }
+        row['Invoice/Challan No.'] = r.deliveryChallanNumber || '';
+        row['Rate Type'] = r.rateType;
+        row['Delivery Date'] = r.deliveryDate ? r.deliveryDate.split('T')[0] : '';
+        row['Expected Delivery Date'] = r.expectedDeliveryDate ? r.expectedDeliveryDate.split('T')[0] : '';
+        row['Final Rate'] = r.shipmentRate;
+        row['POD Status'] = r.podCopy ? 'Yes' : 'No';
+        return row;
+      });
+      filename = 'Logistics_MIS_Report';
+    } else if (activeTab === 'stamp') {
+      dataToExport = stampData.map(r => ({
+        'Service Request ID': r.serviceRequestId,
+        '1st Party Name': r.firstPartyName,
+        '2nd Party Name': r.secondPartyName,
+        'Denomination': r.denomination,
+        'Quantity': r.quantity,
+        'Total Charges': r.totalCharges,
+        'Status': r.status,
+        'Request Date': r.createdAt ? r.createdAt.split('T')[0] : '',
+        'Delivery Date': r.deliveryDate ? r.deliveryDate.split('T')[0] : '',
+      }));
+      filename = 'StampPaper_MIS_Report';
+    } else if (activeTab === 'gifting') {
+      dataToExport = giftingData.map(r => ({
+        'Service Request ID': r.serviceRequestId,
+        'Company Name': r.companyName,
+        'Contact Person': r.contactPersonName,
+        'Purpose of Gifting': r.purposeOfGifting,
+        'Quantity': r.estimatedQuantity,
+        'Delivery Type': r.deliveryType,
+        'Preferred Items & Brands': formatPreferredItems(r),
+        'Branding Requirements': formatBranding(r),
+        'Additional Services': formatAdditionalServices(r),
+        'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
+        'Expected Delivery Date': r.expectedDeliveryDate ? r.expectedDeliveryDate.split('T')[0] : '',
+        'Actual Delivery Date': r.deliveryDate ? r.deliveryDate.split('T')[0] : '',
+        'Quotation Status': r.quotationStatus,
+      }));
+      filename = 'CorporateGifting_MIS_Report';
+    } else if (activeTab === 'events') {
+      dataToExport = eventsData.map(r => ({
+        'Service Request ID': r.serviceRequestId,
+        'Company': r.businessName,
+        'Contact Person': r.contactPersonName,
+        'Event Type': r.eventType,
+        'Event Date': r.eventDate ? r.eventDate.split('T')[0] : '',
+        'Venue': r.venue,
+        'Location': r.location,
+        'Participants': r.participants,
+        'Event Duration': r.eventDuration,
+        'Services Required': safeParseArray(r.servicesRequired).join(', '),
+        'Budget': r.budget,
+        'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
+        'Event Status': r.eventStatus,
+      }));
+      filename = 'Events_MIS_Report';
+    } else if (activeTab === 'it') {
+      dataToExport = itData.map(r => ({
+        'Service Request ID': r.serviceRequestId,
+        'Contact Person': r.contactPersonName,
+        'Email': r.email,
+        'Service Type': r.serviceType,
+        'Priority': r.priority,
+        'Assigned To': r.assignedTo,
+        'Status': r.status,
+        'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
+      }));
+      filename = 'ITSolutions_MIS_Report';
+    }
+
+    if (dataToExport.length === 0) {
+      alert('No data available to export for this report.');
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `${filename}_${dateStr}.xlsx`);
   };
 
   const renderLogistics = () => {

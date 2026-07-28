@@ -327,7 +327,7 @@ export default function Logistics() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            {!order.shipmentAwbNumber && (
+                            {!order.shipmentAwbNumber && order.deliveryStatus !== 'Cancelled' && (
                               <button
                                 onClick={() => setBookingDialogShipment(order)}
                                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
@@ -336,13 +336,15 @@ export default function Logistics() {
                                 Book Carrier
                               </button>
                             )}
-                            <button
-                              onClick={() => setRateDialogShipment(order)}
-                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                              style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
-                              <MdAttachMoney size={14} />
-                              {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
-                            </button>
+                            {order.deliveryStatus !== 'Cancelled' && (
+                              <button
+                                onClick={() => setRateDialogShipment(order)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                                style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                                <MdAttachMoney size={14} />
+                                {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
+                              </button>
+                            )}
                             {order.shipmentAwbNumber && (
                               <button
                                 onClick={() => handleSyncTracking(order.id)}
