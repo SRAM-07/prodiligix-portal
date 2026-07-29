@@ -9,6 +9,9 @@ import {
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 import CancelShipmentDialog from '../components/CancelShipmentDialog';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE_URL}${path}`) : null;
 const statusConfig = {
   'Booked': { color: '#068BC9', bg: '#e0f2fe' },
   'In Transit': { color: '#1d4ed8', bg: '#dbeafe' },
@@ -373,7 +376,7 @@ export default function OrderDetail() {
                 <div className="grid grid-cols-2 gap-4">
 
                   {shipment.invoiceCopy ? (
-                    <a href={shipment.invoiceCopy} target="_blank" rel="noreferrer"
+                    <a href={fullFileUrl(shipment.invoiceCopy)} target="_blank" rel="noreferrer"
                       className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#e0f2fe' }}>
@@ -391,7 +394,7 @@ export default function OrderDetail() {
                   )}
 
                   {shipment.shipmentWithLabel ? (
-                    <a href={shipment.shipmentWithLabel} target="_blank" rel="noreferrer"
+                    <a href={fullFileUrl(shipment.shipmentWithLabel)} target="_blank" rel="noreferrer"
                       className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#e0f2fe' }}>
@@ -408,7 +411,7 @@ export default function OrderDetail() {
                   )}
 
                   {shipment.manifest ? (
-                    <a href={shipment.manifest} target="_blank" rel="noreferrer"
+                    <a href={fullFileUrl(shipment.manifest)} target="_blank" rel="noreferrer"
                       className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#e0f2fe' }}>
@@ -425,7 +428,7 @@ export default function OrderDetail() {
                   )}
 
                   {shipment.podCopy ? (
-                    <a href={shipment.podCopy} target="_blank" rel="noreferrer"
+                    <a href={fullFileUrl(shipment.podCopy)} target="_blank" rel="noreferrer"
                       className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#e0f2fe' }}>

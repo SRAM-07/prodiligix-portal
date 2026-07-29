@@ -222,8 +222,30 @@ export default function BookShipment() {
       }
 
       const response = await api.post('/api/shipments', payload);
-      setSubmitted(true);
       const newShipmentId = response.data.id;
+
+      if (newShipmentId && (invoiceFile || ewayFile)) {
+        try {
+          if (invoiceFile) {
+            const invoiceForm = new FormData();
+            invoiceForm.append('file', invoiceFile);
+            await api.post(`/api/shipments/${newShipmentId}/upload-invoice`, invoiceForm, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+          if (ewayFile) {
+            const ewayForm = new FormData();
+            ewayForm.append('file', ewayFile);
+            await api.post(`/api/shipments/${newShipmentId}/upload-eway-bill`, ewayForm, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+        } catch (uploadError) {
+          console.error('File upload failed:', uploadError);
+        }
+      }
+
+      setSubmitted(true);
       setTimeout(() => {
         if (newShipmentId) {
           navigate(`/client/logistics/${newShipmentId}`);

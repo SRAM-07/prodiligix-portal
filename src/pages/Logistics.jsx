@@ -5,6 +5,10 @@ import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, M
 import api from '../services/api';
 import SetRateDialog from '../components/SetRateDialog';
 import BookWithCarrierDialog from '../components/BookWithCarrierDialog';
+import SetAwbDialog from '../components/SetAwbDialog';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
 
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
@@ -33,12 +37,17 @@ export default function Logistics() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [showStatusOptions, setShowStatusOptions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
   const [searchText, setSearchText] = useState('');
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rateDialogShipment, setRateDialogShipment] = useState(null);
   const [bookingDialogShipment, setBookingDialogShipment] = useState(null);
+  const [awbDialogShipment, setAwbDialogShipment] = useState(null);
   const [syncingId, setSyncingId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
@@ -65,18 +74,28 @@ export default function Logistics() {
     }
   }, [toast]);
 
-  const filtered = logisticsData.filter(o =>
-    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-    (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filtered = logisticsData.filter(o => {
+    const matchesSearch =
+      (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = !statusFilter || o.deliveryStatus === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  const paginated = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, statusFilter]);
 
   const getAvailableDocs = (row) => {
     const docs = [];
-    if (row.invoiceCopy) docs.push({ label: 'Invoice Copy', url: row.invoiceCopy });
-    if (row.ewayBill) docs.push({ label: 'E-Way Bill', url: row.ewayBill });
-    if (row.shipmentWithLabel) docs.push({ label: 'Shipment Label', url: row.shipmentWithLabel });
-    if (row.podCopy) docs.push({ label: 'POD Copy', url: row.podCopy });
-    if (row.manifest) docs.push({ label: 'Manifest', url: row.manifest });
+    if (row.invoiceCopy) docs.push({ label: 'Invoice Copy', url: fullFileUrl(row.invoiceCopy) });
+    if (row.ewayBill) docs.push({ label: 'E-Way Bill', url: fullFileUrl(row.ewayBill) });
+    if (row.shipmentWithLabel) docs.push({ label: 'Shipment Label', url: fullFileUrl(row.shipmentWithLabel) });
+    if (row.podCopy) docs.push({ label: 'POD Copy', url: fullFileUrl(row.podCopy) });
+    if (row.manifest) docs.push({ label: 'Manifest', url: fullFileUrl(row.manifest) });
     return docs;
   };
 
@@ -186,12 +205,41 @@ export default function Logistics() {
                   {filterOptions.map((opt, i) => (
                     <div
                       key={i}
-                      onClick={() => { setActiveFilter(opt); setShowFilter(false); }}
-                      className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm"
+                      onClick={() => {
+                        if (opt === 'Reset / Show All') {
+                          setActiveFilter('Latest');
+                          setStatusFilter(null);
+                          setShowFilter(false);
+                        } else if (opt === 'Status') {
+                          setShowStatusOptions(true);
+                        } else {
+                          setActiveFilter(opt);
+                          setShowFilter(false);
+                        }
+                      }}
+                      className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm flex justify-between items-center"
                       style={{ color: opt === 'Reset / Show All' ? '#ef4444' : '#374151' }}>
                       {opt}
+                      {opt === 'Status' && <span className="text-gray-300">›</span>}
                     </div>
                   ))}
+                  {showStatusOptions && (
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      {['Booked', 'Picked Up', 'In Transit', 'Delivered', 'Exception', 'Cancelled', 'RTO'].map((status, i) => (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setStatusFilter(status);
+                            setActiveFilter(`Status: ${status}`);
+                            setShowFilter(false);
+                            setShowStatusOptions(false);
+                          }}
+                          className="px-6 py-2 cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                          {status}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -200,7 +248,7 @@ export default function Logistics() {
               <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
                 {activeFilter}: {filtered.length}
               </span>
-              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')} />
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Latest'); setStatusFilter(null); }} />
             </div>
 
             <span className="text-sm text-gray-500">({filtered.length})</span>
@@ -230,7 +278,7 @@ export default function Logistics() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((order, i) => {
+                  paginated.map((order, i) => {
                     const s = statusConfig[order.deliveryStatus] || { color: '#9ca3af', bg: '#f3f4f6' };
                     const docs = getAvailableDocs(order);
                     const idColor = getStatusIdColor(order);
@@ -338,6 +386,14 @@ export default function Logistics() {
                             )}
                             {order.deliveryStatus !== 'Cancelled' && (
                               <button
+                                onClick={() => setAwbDialogShipment(order)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                                style={{ color: '#0d9488', backgroundColor: '#ccfbf1' }}>
+                                {order.shipmentAwbNumber ? 'Update AWB' : 'Set AWB'}
+                              </button>
+                            )}
+                            {order.deliveryStatus !== 'Cancelled' && (
+                              <button
                                 onClick={() => setRateDialogShipment(order)}
                                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
                                 style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
@@ -365,6 +421,44 @@ export default function Logistics() {
             </table>
           </div>
 
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-gray-400">
+                Showing {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 disabled:opacity-40 hover:bg-gray-50 transition-colors">
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, i, arr) => (
+                    <React.Fragment key={p}>
+                      {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1 text-gray-300 text-xs">...</span>}
+                      <button
+                        onClick={() => setCurrentPage(p)}
+                        className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor: currentPage === p ? '#068BC9' : 'transparent',
+                          color: currentPage === p ? '#fff' : '#6b7280'
+                        }}>
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 disabled:opacity-40 hover:bg-gray-50 transition-colors">
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -381,6 +475,15 @@ export default function Logistics() {
         <BookWithCarrierDialog
           shipment={bookingDialogShipment}
           onClose={() => setBookingDialogShipment(null)}
+          onSuccess={handleRateSuccess}
+        />
+      )}
+
+      {awbDialogShipment && (
+        <SetAwbDialog
+          shipmentId={awbDialogShipment.id}
+          currentAwb={awbDialogShipment.shipmentAwbNumber}
+          onClose={() => setAwbDialogShipment(null)}
           onSuccess={handleRateSuccess}
         />
       )}

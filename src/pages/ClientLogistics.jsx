@@ -5,6 +5,9 @@ import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, M
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
+
 const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Reset / Show All'];
 
 function getStatusIdColor(row) {
@@ -30,6 +33,8 @@ const statusConfig = {
 export default function ClientLogistics() {
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [showStatusOptions, setShowStatusOptions] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [shipmentsData, setShipmentsData] = useState([]);
@@ -52,18 +57,21 @@ export default function ClientLogistics() {
     fetchShipments();
   }, [companyId]);
 
-  const filtered = shipmentsData.filter(o =>
-    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-    (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filtered = shipmentsData.filter(o => {
+    const matchesSearch =
+      (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = !statusFilter || o.deliveryStatus === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const getAvailableDocs = (row) => {
     const docs = [];
-    if (row.invoiceCopy) docs.push({ label: 'Invoice Copy', url: row.invoiceCopy });
-    if (row.ewayBill) docs.push({ label: 'E-Way Bill', url: row.ewayBill });
-    if (row.shipmentWithLabel) docs.push({ label: 'Shipment Label', url: row.shipmentWithLabel });
-    if (row.podCopy) docs.push({ label: 'POD Copy', url: row.podCopy });
-    if (row.manifest) docs.push({ label: 'Manifest', url: row.manifest });
+    if (row.invoiceCopy) docs.push({ label: 'Invoice Copy', url: fullFileUrl(row.invoiceCopy) });
+    if (row.ewayBill) docs.push({ label: 'E-Way Bill', url: fullFileUrl(row.ewayBill) });
+    if (row.shipmentWithLabel) docs.push({ label: 'Shipment Label', url: fullFileUrl(row.shipmentWithLabel) });
+    if (row.podCopy) docs.push({ label: 'POD Copy', url: fullFileUrl(row.podCopy) });
+    if (row.manifest) docs.push({ label: 'Manifest', url: fullFileUrl(row.manifest) });
     return docs;
   };
 
@@ -129,12 +137,41 @@ export default function ClientLogistics() {
                 {filterOptions.map((opt, i) => (
                   <div
                     key={i}
-                    onClick={() => { setActiveFilter(opt); setShowFilter(false); }}
-                    className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm"
+                    onClick={() => {
+                      if (opt === 'Reset / Show All') {
+                        setActiveFilter('Latest');
+                        setStatusFilter(null);
+                        setShowFilter(false);
+                      } else if (opt === 'Status') {
+                        setShowStatusOptions(true);
+                      } else {
+                        setActiveFilter(opt);
+                        setShowFilter(false);
+                      }
+                    }}
+                    className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm flex justify-between items-center"
                     style={{ color: opt === 'Reset / Show All' ? '#ef4444' : '#374151' }}>
                     {opt}
+                    {opt === 'Status' && <span className="text-gray-300">›</span>}
                   </div>
                 ))}
+                {showStatusOptions && (
+                  <div className="border-t border-gray-100 mt-1 pt-1">
+                    {['Booked', 'Picked Up', 'In Transit', 'Delivered', 'Exception', 'Cancelled', 'RTO'].map((status, i) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setStatusFilter(status);
+                          setActiveFilter(`Status: ${status}`);
+                          setShowFilter(false);
+                          setShowStatusOptions(false);
+                        }}
+                        className="px-6 py-2 cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                        {status}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -143,7 +180,7 @@ export default function ClientLogistics() {
             <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
               {activeFilter}: {filtered.length}
             </span>
-            <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')} />
+            <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Latest'); setStatusFilter(null); }} />
           </div>
 
           <span className="text-sm text-gray-500">({filtered.length})</span>
