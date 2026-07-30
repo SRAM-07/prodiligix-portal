@@ -19,31 +19,37 @@ const serviceMenus = {
   logistics: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },
     { icon: <MdLocalShipping size={20} />, label: 'Logistic Management', path: '/client/logistics', section: 'SERVICES' },
-    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports', section: 'TOOLS' },
+    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports?tab=logistics', section: 'TOOLS' },
     { icon: <MdUpload size={20} />, label: 'Bulk Upload', path: '/client/bulk-upload' },
   ],
   stampPaper: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },
     { icon: <MdDescription size={20} />, label: 'Stamp Paper', path: '/stamp-paper', section: 'SERVICES' },
-    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports', section: 'TOOLS' },
+    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports?tab=stamp', section: 'TOOLS' },
   ],
   gifting: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },
     { icon: <MdCardGiftcard size={20} />, label: 'Corporate Gifting', path: '/gifting', section: 'SERVICES' },
+    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports?tab=gifting', section: 'TOOLS' },
   ],
   events: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },
     { icon: <MdEvent size={20} />, label: 'Event & Team Outing', path: '/events', section: 'SERVICES' },
+    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports?tab=events', section: 'TOOLS' },
   ],
   itSolutions: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },
     { icon: <MdComputer size={20} />, label: 'IT Solutions', path: '/it-solutions', section: 'SERVICES' },
+    { icon: <MdBarChart size={20} />, label: 'Reports', path: '/client/reports?tab=it', section: 'TOOLS' },
   ],
 };
 
 function getMenuForPath(pathname) {
   if (pathname === '/client-dashboard') return serviceMenus.dashboard;
-  if (pathname.includes('/client/logistics') || pathname.includes('/client/bulk-upload') || pathname.includes('/client/reports')) return serviceMenus.logistics;
+  if (pathname.includes('/client/logistics') || pathname.includes('/client/bulk-upload')) return serviceMenus.logistics;
+  if (pathname.includes('/client/reports')) {
+    return serviceMenus.logistics;
+  }
   if (pathname.includes('/stamp-paper')) return serviceMenus.stampPaper;
   if (pathname.includes('/gifting')) return serviceMenus.gifting;
   if (pathname.includes('/events')) return serviceMenus.events;
@@ -95,7 +101,7 @@ export default function ClientSidebar({ expanded, setExpanded }) {
             <button
               onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left ${
-                location.pathname === item.path
+                location.pathname + location.search === item.path
                   ? 'bg-white bg-opacity-15 text-white'
                   : 'text-gray-300 hover:bg-white hover:bg-opacity-10'
               }`}>

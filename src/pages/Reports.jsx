@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
 import { MdDownload, MdFilterList, MdRefresh, MdSearch, MdClose } from 'react-icons/md';
 import api from '../services/api';
@@ -111,7 +112,12 @@ function formatAdditionalServices(row) {
 
 export default function Reports() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState('logistics');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(requestedTab || 'logistics');
+  const isServiceSpecific = !!requestedTab;
+  const visibleTabs = isServiceSpecific ? tabs.filter(t => t.key === requestedTab) : tabs;
+
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [searchText, setSearchText] = useState('');
@@ -569,7 +575,7 @@ export default function Reports() {
 
           {/* Tabs */}
           <div className="flex gap-1 mb-5 bg-white rounded-xl border border-gray-100 shadow-sm p-1 w-fit">
-            {tabs.map(tab => (
+            {visibleTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setSearchText(''); }}

@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [statusCounts, setStatusCounts] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dashboardSearchText, setDashboardSearchText] = useState('');
   const [actionRequired, setActionRequired] = useState({ paymentPending: 0, noAwbSet: 0, exceptions: 0 });
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -107,6 +108,25 @@ export default function Dashboard() {
     };
     fetchDashboardData();
   }, []);
+
+  const handleDashboardSearch = async (e) => {
+    if (e.key !== "Enter" || !dashboardSearchText.trim()) return;
+    try {
+      const res = await api.get("/api/shipments");
+      const match = res.data.find(s =>
+        (s.serviceRequestId || "").toLowerCase() === dashboardSearchText.trim().toLowerCase() ||
+        (s.shipmentAwbNumber || "").toLowerCase() === dashboardSearchText.trim().toLowerCase()
+      );
+      if (match) {
+        navigate(`/logistics/${match.id}`);
+      } else {
+        alert("No shipment found matching that Service Request ID or AWB number.");
+      }
+    } catch (error) {
+      console.error("Search failed:", error);
+      alert("Search failed. Please try again.");
+    }
+  };
 
   const shipmentCounts = statusCounts?.shipment_bookings || {};
   const giftingCounts = statusCounts?.corporate_giftings || {};
@@ -212,6 +232,9 @@ export default function Dashboard() {
               <input
                 type="text"
                 placeholder="Search orders, AWB..."
+                value={dashboardSearchText}
+                onChange={e => setDashboardSearchText(e.target.value)}
+                onKeyDown={handleDashboardSearch}
                 className="bg-transparent text-sm outline-none w-44 text-gray-600"
               />
             </div>

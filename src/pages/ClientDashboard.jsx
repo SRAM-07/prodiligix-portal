@@ -378,7 +378,9 @@ export default function ClientDashboard() {
                 <span className="text-lg">🧮</span>
                 <span className="text-xs font-medium text-gray-600">Rate Calculator</span>
               </button>
-              <button className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+              <button
+                onClick={() => navigate('/client/knowledge-base')}
+                className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
                 <span className="text-lg">📚</span>
                 <span className="text-xs font-medium text-gray-600">Knowledge Base</span>
               </button>

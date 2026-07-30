@@ -20,6 +20,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import ClientLogistics from './pages/ClientLogistics';
 import BookShipment from './pages/BookShipment';
 import BulkUpload from './pages/BulkUpload';
+import KnowledgeBase from './pages/KnowledgeBase';
 import BulkUploadInstructions from './pages/BulkUploadInstructions';
 import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -152,6 +153,11 @@ function App() {
         <Route path="/client/bulk-upload" element={
           <ProtectedRoute allowedRoles={CLIENT_ROLES}>
             <BulkUpload />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/knowledge-base" element={
+          <ProtectedRoute allowedRoles={CLIENT_ROLES}>
+            <KnowledgeBase />
           </ProtectedRoute>
         } />
         <Route path="/client/bulk-upload-instructions" element={
