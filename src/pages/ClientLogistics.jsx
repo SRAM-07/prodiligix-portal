@@ -8,7 +8,7 @@ import { getCurrentUser } from '../services/authService';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
 
-const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Reset / Show All'];
+const filterOptions = ['Sort: Newest First', 'Sort: Oldest First', 'Since Date', 'Date Range', 'Status', 'Reset / Show All'];
 
 function getStatusIdColor(row) {
   const status = row.deliveryStatus ? row.deliveryStatus.toLowerCase() : '';
@@ -32,9 +32,12 @@ const statusConfig = {
 
 export default function ClientLogistics() {
   const [showFilter, setShowFilter] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('Latest');
+  const [activeFilter, setActiveFilter] = useState('Sort: Newest First');
   const [statusFilter, setStatusFilter] = useState(null);
+  const [sortOrder, setSortOrder] = useState('newest');
   const [showStatusOptions, setShowStatusOptions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
   const [searchText, setSearchText] = useState('');
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [shipmentsData, setShipmentsData] = useState([]);
@@ -64,6 +67,19 @@ export default function ClientLogistics() {
     const matchesStatus = !statusFilter || o.deliveryStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / rowsPerPage));
+  const paginated = sorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, statusFilter, sortOrder]);
 
   const getAvailableDocs = (row) => {
     const docs = [];
@@ -139,11 +155,20 @@ export default function ClientLogistics() {
                     key={i}
                     onClick={() => {
                       if (opt === 'Reset / Show All') {
-                        setActiveFilter('Latest');
+                        setActiveFilter('Sort: Newest First');
                         setStatusFilter(null);
+                        setSortOrder('newest');
                         setShowFilter(false);
                       } else if (opt === 'Status') {
                         setShowStatusOptions(true);
+                      } else if (opt === 'Sort: Newest First') {
+                        setSortOrder('newest');
+                        setActiveFilter(opt);
+                        setShowFilter(false);
+                      } else if (opt === 'Sort: Oldest First') {
+                        setSortOrder('oldest');
+                        setActiveFilter(opt);
+                        setShowFilter(false);
                       } else {
                         setActiveFilter(opt);
                         setShowFilter(false);
@@ -178,12 +203,12 @@ export default function ClientLogistics() {
 
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
             <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
-              {activeFilter}: {filtered.length}
+              {activeFilter}: {sorted.length}
             </span>
-            <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Latest'); setStatusFilter(null); }} />
+            <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Sort: Newest First'); setStatusFilter(null); setSortOrder('newest'); }} />
           </div>
 
-          <span className="text-sm text-gray-500">({filtered.length})</span>
+          <span className="text-sm text-gray-500">({sorted.length})</span>
 
           <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <MdRefresh size={18} className="text-gray-400" />
@@ -215,14 +240,14 @@ export default function ClientLogistics() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {sorted.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="text-center py-10 text-gray-400 text-sm">
                     No shipments found
                   </td>
                 </tr>
               ) : (
-                filtered.map((order, i) => {
+                paginated.map((order, i) => {
                   const s = statusConfig[order.deliveryStatus] || { color: '#9ca3af', bg: '#f3f4f6' };
                   const docs = getAvailableDocs(order);
                   const idColor = getStatusIdColor(order);
@@ -298,6 +323,45 @@ export default function ClientLogistics() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs text-gray-400">
+              Showing {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, sorted.length)} of {sorted.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 disabled:opacity-40 hover:bg-gray-50 transition-colors">
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .map((p, i, arr) => (
+                  <React.Fragment key={p}>
+                    {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1 text-gray-300 text-xs">...</span>}
+                    <button
+                      onClick={() => setCurrentPage(p)}
+                      className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+                      style={{
+                        backgroundColor: currentPage === p ? '#068BC9' : 'transparent',
+                        color: currentPage === p ? '#fff' : '#6b7280'
+                      }}>
+                      {p}
+                    </button>
+                  </React.Fragment>
+                ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 disabled:opacity-40 hover:bg-gray-50 transition-colors">
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </ClientLayout>
   );

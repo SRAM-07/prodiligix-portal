@@ -553,7 +553,7 @@ export default function BookShipment() {
               ) : (
                 <div
                   className="rounded-xl px-8 py-3 text-center text-white min-w-[160px]"
-                  style={{ backgroundColor: rateLoading ? '#9ca3af' : calculatedRate ? '#22c55e' : '#ef4444' }}>
+                  style={{ backgroundColor: rateLoading ? '#9ca3af' : calculatedRate ? '#22c55e' : '#0b65a1' }}>
                   <p className="text-xs opacity-80">Final Rate</p>
                   <p className="text-2xl font-bold">
                     {rateLoading ? '...' : calculatedRate ? `₹${parseFloat(calculatedRate).toFixed(2)}` : '—'}

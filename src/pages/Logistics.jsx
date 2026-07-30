@@ -10,7 +10,7 @@ import SetAwbDialog from '../components/SetAwbDialog';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
 
-const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
+const filterOptions = ['Sort: Newest First', 'Sort: Oldest First', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
 
 function getStatusIdColor(row) {
   const status = row.deliveryStatus ? row.deliveryStatus.toLowerCase() : '';
@@ -36,8 +36,9 @@ const statusConfig = {
 export default function Logistics() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('Latest');
+  const [activeFilter, setActiveFilter] = useState('Sort: Newest First');
   const [statusFilter, setStatusFilter] = useState(null);
+  const [sortOrder, setSortOrder] = useState('newest');
   const [showStatusOptions, setShowStatusOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -49,6 +50,7 @@ export default function Logistics() {
   const [bookingDialogShipment, setBookingDialogShipment] = useState(null);
   const [awbDialogShipment, setAwbDialogShipment] = useState(null);
   const [syncingId, setSyncingId] = useState(null);
+  const [sendingEmailId, setSendingEmailId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
 
@@ -82,12 +84,18 @@ export default function Logistics() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const paginated = filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const sorted = [...filtered].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / rowsPerPage));
+  const paginated = sorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, statusFilter]);
+  }, [searchText, statusFilter, sortOrder]);
 
   const getAvailableDocs = (row) => {
     const docs = [];
@@ -115,6 +123,19 @@ export default function Logistics() {
       setToast(message);
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const handleSendLabelEmail = async (shipmentId) => {
+    setSendingEmailId(shipmentId);
+    try {
+      const res = await api.post(`/api/shipments/${shipmentId}/send-label-email`);
+      setToast(res.data.message || 'Label email sent successfully');
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to send label email';
+      setToast(message);
+    } finally {
+      setSendingEmailId(null);
     }
   };
 
@@ -207,11 +228,20 @@ export default function Logistics() {
                       key={i}
                       onClick={() => {
                         if (opt === 'Reset / Show All') {
-                          setActiveFilter('Latest');
+                          setActiveFilter('Sort: Newest First');
                           setStatusFilter(null);
+                          setSortOrder('newest');
                           setShowFilter(false);
                         } else if (opt === 'Status') {
                           setShowStatusOptions(true);
+                        } else if (opt === 'Sort: Newest First') {
+                          setSortOrder('newest');
+                          setActiveFilter(opt);
+                          setShowFilter(false);
+                        } else if (opt === 'Sort: Oldest First') {
+                          setSortOrder('oldest');
+                          setActiveFilter(opt);
+                          setShowFilter(false);
                         } else {
                           setActiveFilter(opt);
                           setShowFilter(false);
@@ -246,12 +276,12 @@ export default function Logistics() {
 
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
               <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
-                {activeFilter}: {filtered.length}
+                {activeFilter}: {sorted.length}
               </span>
-              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Latest'); setStatusFilter(null); }} />
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Sort: Newest First'); setStatusFilter(null); setSortOrder('newest'); }} />
             </div>
 
-            <span className="text-sm text-gray-500">({filtered.length})</span>
+            <span className="text-sm text-gray-500">({sorted.length})</span>
 
             <button onClick={fetchShipments} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
               <MdRefresh size={18} className="text-gray-400" />
@@ -271,7 +301,7 @@ export default function Logistics() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {sorted.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length} className="text-center py-10 text-gray-400 text-sm">
                       No shipments found
@@ -364,8 +394,9 @@ export default function Logistics() {
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           {order.shipmentWithLabel ? (
                             <button
-                              onClick={() => alert('Send Label Email — coming soon!')}
-                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                              onClick={() => handleSendLabelEmail(order.id)}
+                              disabled={sendingEmailId === order.id}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-40"
                               title="Send Label Email">
                               <MdMailOutline size={16} style={{ color: '#068BC9' }} />
                             </button>
@@ -424,7 +455,7 @@ export default function Logistics() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-xs text-gray-400">
-                Showing {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filtered.length)} of {filtered.length}
+                Showing {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, sorted.length)} of {sorted.length}
               </p>
               <div className="flex items-center gap-1">
                 <button
