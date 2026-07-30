@@ -23,6 +23,7 @@ import BulkUpload from './pages/BulkUpload';
 import KnowledgeBase from './pages/KnowledgeBase';
 import BulkUploadInstructions from './pages/BulkUploadInstructions';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import ITSolutionForm from './pages/ITSolutionForm';
 
@@ -39,6 +40,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Admin only routes */}
         <Route path="/dashboard" element={

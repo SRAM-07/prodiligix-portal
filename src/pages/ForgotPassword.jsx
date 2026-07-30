@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -15,7 +16,12 @@ export default function ForgotPassword() {
       return;
     }
     setError('');
-    setSubmitted(true);
+    try {
+      await api.post('/api/auth/forgot-password', { email });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -27,7 +33,7 @@ export default function ForgotPassword() {
           <img
             src="/logo.png"
             alt="ProDiligix"
-            className="h-10 mx-auto mb-5"
+            className="h-32 mx-auto mb-5"
           />
           <h2 className="text-lg font-bold text-gray-800 mb-2">Forgot your password?</h2>
           <p className="text-sm text-gray-400">
