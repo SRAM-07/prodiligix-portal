@@ -21,21 +21,24 @@ export default function ClientDashboard() {
   const [weeklyData, setWeeklyData] = useState([]);
   const [weeklyByService, setWeeklyByService] = useState([]);
   const [hoveredService, setHoveredService] = useState(null);
-  const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState('');
   const user = getCurrentUser();
   const companyId = user?.companyId || 1;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [shipmentRes, walletRes, weeklyRes, statusRes, weeklyByServiceRes] = await Promise.all([
+        const [shipmentRes, walletRes, weeklyRes, statusRes, weeklyByServiceRes, companyRes] = await Promise.all([
           api.get(`/api/dashboard/user-shipment-bookings/${companyId}`),
           api.get(`/api/wallet/balance/${companyId}`),
           api.get(`/api/dashboard/weekly-stats/${companyId}`),
           api.get(`/api/dashboard/request-status-counts/${companyId}`),
-          api.get(`/api/dashboard/weekly-by-service/${companyId}`)
+          api.get(`/api/dashboard/weekly-by-service/${companyId}`),
+          api.get(`/api/companies/${companyId}`)
         ]);
 
+        setCompanyName(companyRes.data.businessName || '');
         setShipmentStats(shipmentRes.data);
         setWalletData(walletRes.data);
         setStatusCounts(statusRes.data);
@@ -214,7 +217,7 @@ export default function ClientDashboard() {
         <div>
           <p className="text-gray-400 text-xs">Welcome back,</p>
           <h2 className="text-sm font-bold text-gray-800">
-            Rapido  {user?.role === 'company_admin' ? 'Admin' : 'Frontdesk'}
+            {user?.firstName} {user?.lastName}
           </h2>
         </div>
         <div className="flex items-center gap-3">
@@ -244,7 +247,7 @@ export default function ClientDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-lg font-bold text-gray-800 mb-1">
-                Hi, Roppen Transportation Service Private Limited 👋
+                Hi, {companyName || 'there'} 👋
               </h2>
               <p className="text-sm text-gray-400">Here's what's happening with your services today.</p>
             </div>

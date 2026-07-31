@@ -16,6 +16,9 @@ import ITSolutions from './pages/ITSolutions';
 import ITSolutionsDetail from './pages/ITSolutionsDetail';
 import RateCalculator from './pages/RateCalculator';
 import Reports from './pages/Reports';
+import Companies from './pages/Companies';
+import NewCompany from './pages/NewCompany';
+import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
 import ClientLogistics from './pages/ClientLogistics';
 import BookShipment from './pages/BookShipment';
@@ -29,6 +32,7 @@ import ITSolutionForm from './pages/ITSolutionForm';
 
 
 const ADMIN_ROLES = ['super_admin', 'crm_user'];
+const SUPER_ADMIN_ROLES = ['super_admin'];
 const CLIENT_ROLES = ['company_admin', 'company_crm_user', 'company_user'];
 const ALL_ROLES = [...ADMIN_ROLES, ...CLIENT_ROLES];
 
@@ -73,11 +77,19 @@ function App() {
             <Reports />
           </ProtectedRoute>
         } />
-
-        {/* Shared routes - all roles */}
-        <Route path="/stamp-paper" element={
-          <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <StampPaper />
+        <Route path="/companies" element={
+          <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
+            <Companies />
+          </ProtectedRoute>
+        } />
+        <Route path="/companies/new" element={
+          <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
+            <NewCompany />
+          </ProtectedRoute>
+        } />
+        <Route path="/companies/:id" element={
+          <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
+            <CompanyDetail />
           </ProtectedRoute>
         } />
         <Route path="/stamp-paper/new" element={

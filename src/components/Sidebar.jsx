@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { getCurrentUser } from '../services/authService';
+import { MdBusiness } from 'react-icons/md';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   MdDashboard, 
@@ -115,6 +117,11 @@ function ProfileMenu({ expanded, navigate }) {
 
 export default function Sidebar({ onToggle }) {
   const [expanded, setExpanded] = useState(false);
+  const currentUser = getCurrentUser();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+  const sections = isSuperAdmin
+    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdBusiness size={20}/>, label: 'Companies', path: '/companies' }] }]
+    : menuSections;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -161,7 +168,7 @@ export default function Sidebar({ onToggle }) {
 
       {/* Menu sections */}
       <nav className="flex-1 overflow-hidden py-2">
-        {menuSections.map((section, sIndex) => (
+        {sections.map((section, sIndex) => (
           <div key={sIndex}>
 
             {/* Section label */}

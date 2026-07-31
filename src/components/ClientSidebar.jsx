@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logout, getCurrentUser } from '../services/authService';
+import api from '../services/api';
 import {
   MdDashboard, MdLocalShipping, MdDescription,
   MdCardGiftcard, MdEvent, MdComputer,
@@ -61,6 +62,15 @@ export default function ClientSidebar({ expanded, setExpanded }) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getCurrentUser();
+  const [companyName, setCompanyName] = useState('');
+
+  useEffect(() => {
+    if (user?.companyId) {
+      api.get(`/api/companies/${user.companyId}`)
+        .then(res => setCompanyName(res.data.businessName || ''))
+        .catch(() => {});
+    }
+  }, [user?.companyId]);
 
   const menuItems = getMenuForPath(location.pathname);
 
@@ -79,12 +89,11 @@ export default function ClientSidebar({ expanded, setExpanded }) {
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
           style={{ backgroundColor: '#068BC9' }}>
-          R
+          {companyName ? companyName.charAt(0).toUpperCase() : 'C'}
         </div>
         {expanded && (
           <div className="overflow-hidden">
-            <p className="text-white text-xs font-semibold truncate">Rapido .</p>
-            <p className="text-gray-400 text-xs truncate">Roppen Transportation...</p>
+            <p className="text-white text-xs font-semibold truncate">{companyName || 'Loading...'}</p>
           </div>
         )}
       </div>
