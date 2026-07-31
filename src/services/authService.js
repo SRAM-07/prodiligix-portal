@@ -8,7 +8,7 @@ export const login = async (email, password) => {
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  window.location.href = '/';
+  window.location.href = process.env.PUBLIC_URL + '/';
 };
 
 export const getCurrentUser = () => {
