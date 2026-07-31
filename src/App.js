@@ -38,7 +38,7 @@ const ALL_ROLES = [...ADMIN_ROLES, ...CLIENT_ROLES];
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.PUBLIC_URL}>
       <Routes>
 
         {/* Public routes */}
