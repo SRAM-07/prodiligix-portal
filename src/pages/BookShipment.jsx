@@ -302,7 +302,7 @@ export default function BookShipment() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: "url('/shipment-bg.png')",
+            backgroundImage: `url(${process.env.PUBLIC_URL}/shipment-bg.png)`,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'left bottom',
             backgroundSize: 'contain',

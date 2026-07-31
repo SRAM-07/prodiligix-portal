@@ -31,7 +31,7 @@ export default function ForgotPassword() {
         {/* Logo */}
         <div className="text-center mb-6">
           <img
-            src="/logo.png"
+            src={process.env.PUBLIC_URL + "/logo.png"}
             alt="ProDiligix"
             className="h-32 mx-auto mb-5"
           />

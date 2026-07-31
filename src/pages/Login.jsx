@@ -35,7 +35,7 @@ export default function Login() {
     <div
       className="min-h-screen flex items-center justify-center relative py-0"
       style={{
-        backgroundImage: 'url(/bg.png)',
+        backgroundImage: `url(${process.env.PUBLIC_URL}/bg.png)`,
         backgroundSize: '100%',
         backgroundPosition: 'center center',
         backgroundRepeat: 'no-repeat',
@@ -45,7 +45,7 @@ export default function Login() {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm relative z-10">
 
         <div className="flex flex-col items-center mb-0">
-          <img src="/logo.png" alt="ProDiligix" className="h-40  mb-10 object-contain" />
+          <img src={process.env.PUBLIC_URL + "/logo.png"} alt="ProDiligix" className="h-40  mb-10 object-contain" />
         </div>
 
         <h2 className="text-lg font-semibold text-gray-700 mb-10 text-center">

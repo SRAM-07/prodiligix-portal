@@ -145,7 +145,7 @@ export default function EventManagementForm() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: "url('/event-management-bg.png')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/event-management-bg.png)`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'left bottom',
               backgroundSize: 'contain',
