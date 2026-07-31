@@ -92,6 +92,11 @@ function App() {
             <CompanyDetail />
           </ProtectedRoute>
         } />
+        <Route path="/stamp-paper" element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <StampPaper />
+          </ProtectedRoute>
+        } />
         <Route path="/stamp-paper/new" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
             <StampPaperForm />
