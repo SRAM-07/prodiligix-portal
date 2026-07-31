@@ -101,7 +101,7 @@ export default function ITSolutionForm() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: "url('/it-solutions-bg.png')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/it-solutions-bg.png)`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'left bottom',
               backgroundSize: 'contain',

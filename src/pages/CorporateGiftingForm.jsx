@@ -224,7 +224,7 @@ export default function CorporateGiftingForm() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: "url('/corporate-gifting-bg.png')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/corporate-gifting-bg.png)`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'left bottom',
               backgroundSize: 'contain',

@@ -120,7 +120,7 @@ export default function StampPaperForm() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: "url('/stamp-paper-bg.png')",
+              backgroundImage: `url(${process.env.PUBLIC_URL}/stamp-paper-bg.png)`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'left bottom',
               backgroundSize: 'contain',

@@ -191,7 +191,7 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
-                    <img src="/knowledge-base/Flyers_Polybags.jpeg" alt="Flyers and Polybags" className="w-full h-48 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Flyers_Polybags.jpeg"} alt="Flyers and Polybags" className="w-full h-48 object-contain bg-white" />
                     <p className="text-xs text-center text-gray-400 py-2">Standard Polybag / Flyer Sizes</p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export default function KnowledgeBase() {
                 <h3 className="text-base font-semibold text-gray-700 mb-4">Box Quality Standards</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg overflow-hidden border-2" style={{ borderColor: '#22c55e' }}>
-                    <img src="/knowledge-base/Correct_Way.png" alt="Correct packing" className="w-full h-40 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Correct_Way.png"} alt="Correct packing" className="w-full h-40 object-contain bg-white" />
                     <div className="text-center text-white text-sm font-semibold py-1.5" style={{ backgroundColor: '#16a34a' }}>
                       ✓ Correct Way
                     </div>
@@ -213,7 +213,7 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                   <div className="rounded-lg overflow-hidden border-2" style={{ borderColor: '#ef4444' }}>
-                    <img src="/knowledge-base/Incorrect_Way.png" alt="Incorrect packing" className="w-full h-40 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Incorrect_Way.png"} alt="Incorrect packing" className="w-full h-40 object-contain bg-white" />
                     <div className="text-center text-white text-sm font-semibold py-1.5 bg-red-600">
                       ✕ Incorrect Way
                     </div>
@@ -251,7 +251,7 @@ export default function KnowledgeBase() {
                     { img: 'Zip_Lock.jpeg', title: 'Zip Lock Pouches', desc: 'Final barrier against leaks.' },
                   ].map((item, i) => (
                     <div key={i} className="rounded-lg border border-gray-100 overflow-hidden">
-                      <img src={`/knowledge-base/${item.img}`} alt={item.title} className="w-full h-32 object-cover bg-gray-100" />
+                      <img src={process.env.PUBLIC_URL + `/knowledge-base/${item.img}`} alt={item.title} className="w-full h-32 object-cover bg-gray-100" />
                       <div className="p-3">
                         <p className="text-sm font-medium text-gray-700">{item.title}</p>
                         <p className="text-xs text-gray-400">{item.desc}</p>
@@ -296,7 +296,7 @@ export default function KnowledgeBase() {
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-3">Light Weight Shipments</p>
                     <div className="rounded-lg border border-gray-100 overflow-hidden text-center">
-                      <img src="/knowledge-base/Center_Seam_Taping.png" alt="Center Seam Taping" className="w-full h-40 object-contain bg-gray-50" />
+                      <img src={process.env.PUBLIC_URL + "/knowledge-base/Center_Seam_Taping.png"} alt="Center Seam Taping" className="w-full h-40 object-contain bg-gray-50" />
                       <div className="bg-gray-50 p-3">
                         <p className="text-sm font-semibold text-gray-700">Center Seam Taping</p>
                         <p className="text-xs text-gray-400">Seal the center seam of top and bottom.</p>
@@ -306,7 +306,7 @@ export default function KnowledgeBase() {
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-3">Heavy Weight Shipments</p>
                     <div className="rounded-lg border border-gray-100 overflow-hidden text-center">
-                      <img src="/knowledge-base/H-Taping.png" alt="H-Taping" className="w-full h-40 object-contain bg-gray-50" />
+                      <img src={process.env.PUBLIC_URL + "/knowledge-base/H-Taping.png"} alt="H-Taping" className="w-full h-40 object-contain bg-gray-50" />
                       <div className="bg-gray-50 p-3">
                         <p className="text-sm font-semibold text-gray-700">H-Taping Method</p>
                         <p className="text-xs text-gray-400">Seal center AND edge seams (H-shape).</p>
@@ -338,7 +338,7 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-gray-100 overflow-hidden">
-                    <img src="/knowledge-base/Standard_Label_Layout.png" alt="Standard Label Layout" className="w-full h-64 object-contain bg-gray-50" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Standard_Label_Layout.png"} alt="Standard Label Layout" className="w-full h-64 object-contain bg-gray-50" />
                     <p className="text-xs text-center text-gray-400 py-2">Standard Label Layout</p>
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export default function KnowledgeBase() {
                     { img: 'dont_use_torn_label.png', label: 'Do not use torn barcode/label' },
                   ].map((item, i) => (
                     <div key={i} className="rounded-lg border-2 border-red-200 overflow-hidden">
-                      <img src={`/knowledge-base/${item.img}`} alt={item.label} className="w-full h-32 object-cover" />
+                      <img src={process.env.PUBLIC_URL + `/knowledge-base/${item.img}`} alt={item.label} className="w-full h-32 object-cover" />
                       <p className="text-center text-xs font-semibold text-red-500 py-2">{item.label}</p>
                     </div>
                   ))}

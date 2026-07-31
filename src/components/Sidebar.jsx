@@ -145,7 +145,7 @@ export default function Sidebar({ onToggle }) {
         className="flex items-center px-4 border-b flex-shrink-0"
         style={{ height: '64px', borderColor: 'rgba(255,255,255,0.07)' }}>
         <img
-          src="/logo.png"
+          src={process.env.PUBLIC_URL + "/logo.png"}
           alt="ProDiligix"
           className="object-contain flex-shrink-0"
           style={{ 
