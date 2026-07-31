@@ -82,7 +82,7 @@ export default function Login() {
           </div>
 
           <div className="flex justify-end mb-5">
-            <a href="/forgot-password" className="text-sm" style={{ color: '#068BC9' }}>
+            <a onClick={() => navigate("/forgot-password")} className="text-sm cursor-pointer" style={{ color: '#068BC9' }}>
               Forgot password?
             </a>
           </div>
