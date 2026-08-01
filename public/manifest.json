@@ -3,12 +3,12 @@
   "name": "ProDiligix Operations Portal",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "favicon-square.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo.png",
+      "src": "favicon-square.png",
       "type": "image/png",
       "sizes": "512x512"
     }
