@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
 import { MdArrowBack } from 'react-icons/md';
+import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const eventTypeOptions = [
   'Corporate Event',
@@ -17,6 +19,8 @@ const eventDurationOptions = ['Half Day', 'Full Day', 'Multiple Days'];
 const servicesList = [
   'Event Concept & Theme Planning',
   'Venue Booking',
+  'Team Outing',
+  'Festive Decoration',
   'Travel & Transport Arrangements',
   'Accommodation (if multi-day)',
   'Food & Catering',
@@ -31,19 +35,30 @@ const servicesList = [
 
 export default function EventManagementForm() {
   const navigate = useNavigate();
+  const user = getCurrentUser();
+  const companyId = user?.companyId;
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [customEventType, setCustomEventType] = useState('');
   const [isOtherServiceSelected, setIsOtherServiceSelected] = useState(false);
   const [customServiceValue, setCustomServiceValue] = useState('');
+  const [companyName, setCompanyName] = useState('');
+
+  useEffect(() => {
+    if (companyId) {
+      api.get(`/api/companies/${companyId}`)
+        .then(res => setCompanyName(res.data.businessName || ''))
+        .catch(console.error);
+    }
+  }, [companyId]);
 
   const [form, setForm] = useState({
-    businessName: '',
-    contactPersonName: '',
+    contactPersonName: user?.name || '',
     designation: '',
-    contactPersonEmail: '',
-    contactPersonPhone: '',
+    contactPersonEmail: user?.email || '',
+    contactPersonPhone: user?.phone || '',
     companyAddress: '',
     eventType: '',
     eventDate: '',
@@ -80,7 +95,6 @@ export default function EventManagementForm() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.businessName) newErrors.businessName = 'Required';
     if (!form.contactPersonName) newErrors.contactPersonName = 'Required';
     if (!form.designation) newErrors.designation = 'Required';
     if (!form.contactPersonEmail || !/^\S+@\S+\.\S+$/.test(form.contactPersonEmail)) newErrors.contactPersonEmail = 'Enter valid email';
@@ -96,10 +110,41 @@ export default function EventManagementForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setSubmitted(true);
-    setTimeout(() => navigate('/events'), 2500);
+    setSubmitting(true);
+
+    try {
+      await api.post('/api/events', {
+        companyId,
+        businessName: companyName,
+        contactPersonName: form.contactPersonName,
+        designation: form.designation,
+        contactPersonEmail: form.contactPersonEmail,
+        contactPersonPhone: form.contactPersonPhone,
+        companyAddress: form.companyAddress,
+        eventType: form.eventType === 'Other' ? customEventType : form.eventType,
+        eventDate: form.eventDate,
+        participants: parseInt(form.participants),
+        location: form.location,
+        venue: form.venue,
+        budget: parseFloat(form.budget),
+        eventDuration: form.eventDuration,
+        servicesRequired: [
+          ...form.servicesRequired,
+          ...(isOtherServiceSelected && customServiceValue ? [customServiceValue] : [])
+        ].join(', '),
+        eventNotes: form.eventNotes,
+      });
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/events'), 2500);
+    } catch (error) {
+      console.error('Failed to submit event request:', error);
+      setErrors({ submit: error.response?.data?.message || 'Failed to submit. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -138,227 +183,221 @@ export default function EventManagementForm() {
           </div>
         </div>
 
-        <div
-          className="relative min-h-screen overflow-hidden"
-          style={{ backgroundColor: '#F7FBFF' }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${process.env.PUBLIC_URL}/event-management-bg.png)`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'left bottom',
-              backgroundSize: 'contain',
-              opacity: 0.22,
-              pointerEvents: 'none'
-            }}
-          />
+        <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#F7FBFF' }}>
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url(${process.env.PUBLIC_URL}/event-management-bg.png)`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'left bottom',
+            backgroundSize: 'contain',
+            opacity: 0.22,
+            pointerEvents: 'none'
+          }} />
           <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
-          {/* Company Details */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Details</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Company Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.businessName}
-                  onChange={e => handleChange('businessName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.businessName && <p className="text-xs text-red-400 mt-1">{errors.businessName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Company Address <span className="text-red-400">*</span></p>
-                <input type="text" value={form.companyAddress}
-                  onChange={e => handleChange('companyAddress', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.companyAddress && <p className="text-xs text-red-400 mt-1">{errors.companyAddress}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Contact Person Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.contactPersonName}
-                  onChange={e => handleChange('contactPersonName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.contactPersonName && <p className="text-xs text-red-400 mt-1">{errors.contactPersonName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Designation <span className="text-red-400">*</span></p>
-                <input type="text" value={form.designation}
-                  onChange={e => handleChange('designation', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.designation && <p className="text-xs text-red-400 mt-1">{errors.designation}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Email ID <span className="text-red-400">*</span></p>
-                <input type="email" value={form.contactPersonEmail}
-                  onChange={e => handleChange('contactPersonEmail', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.contactPersonEmail && <p className="text-xs text-red-400 mt-1">{errors.contactPersonEmail}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Phone Number <span className="text-red-400">*</span></p>
-                <input type="tel" maxLength={10} value={form.contactPersonPhone}
-                  onChange={e => handleChange('contactPersonPhone', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.contactPersonPhone && <p className="text-xs text-red-400 mt-1">{errors.contactPersonPhone}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* Event Type */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Event Type</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Select Event Type</p>
-                <select value={form.eventType}
-                  onChange={e => handleChange('eventType', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  <option value="">Select Type</option>
-                  {eventTypeOptions.map((o, i) => <option key={i}>{o}</option>)}
-                </select>
-              </div>
-              {form.eventType === 'Other' && (
+            {/* Company Details */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Details</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Please Specify</p>
-                  <input type="text" value={customEventType}
-                    onChange={e => setCustomEventType(e.target.value)}
+                  <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                  <div className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700">
+                    {companyName || '—'}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Company Address <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.companyAddress}
+                    onChange={e => handleChange('companyAddress', e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.companyAddress && <p className="text-xs text-red-400 mt-1">{errors.companyAddress}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Contact Person Name <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.contactPersonName}
+                    onChange={e => handleChange('contactPersonName', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.contactPersonName && <p className="text-xs text-red-400 mt-1">{errors.contactPersonName}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Designation <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.designation}
+                    onChange={e => handleChange('designation', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.designation && <p className="text-xs text-red-400 mt-1">{errors.designation}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Email ID <span className="text-red-400">*</span></p>
+                  <input type="email" value={form.contactPersonEmail}
+                    onChange={e => handleChange('contactPersonEmail', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.contactPersonEmail && <p className="text-xs text-red-400 mt-1">{errors.contactPersonEmail}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Phone Number <span className="text-red-400">*</span></p>
+                  <input type="tel" maxLength={10} value={form.contactPersonPhone}
+                    onChange={e => handleChange('contactPersonPhone', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.contactPersonPhone && <p className="text-xs text-red-400 mt-1">{errors.contactPersonPhone}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Event Type */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Event Type</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Select Event Type</p>
+                  <select value={form.eventType}
+                    onChange={e => handleChange('eventType', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                    <option value="">Select Type</option>
+                    {eventTypeOptions.map((o, i) => <option key={i}>{o}</option>)}
+                  </select>
+                </div>
+                {form.eventType === 'Other' && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Please Specify</p>
+                    <input type="text" value={customEventType}
+                      onChange={e => setCustomEventType(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Event Details */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Event Details</h3>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Preferred Event Date <span className="text-red-400">*</span></p>
+                  <input type="date" value={form.eventDate}
+                    onChange={e => handleChange('eventDate', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.eventDate && <p className="text-xs text-red-400 mt-1">{errors.eventDate}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Number of Heads <span className="text-red-400">*</span></p>
+                  <input type="number" min="1" value={form.participants}
+                    onChange={e => handleChange('participants', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.participants && <p className="text-xs text-red-400 mt-1">{errors.participants}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Preferred Location/City <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.location}
+                    onChange={e => handleChange('location', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.location && <p className="text-xs text-red-400 mt-1">{errors.location}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Venue <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.venue}
+                    onChange={e => handleChange('venue', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.venue && <p className="text-xs text-red-400 mt-1">{errors.venue}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Budget Range (₹) <span className="text-red-400">*</span></p>
+                  <input type="number" min="1" value={form.budget}
+                    onChange={e => handleChange('budget', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.budget && <p className="text-xs text-red-400 mt-1">{errors.budget}</p>}
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Duration <span className="text-red-400">*</span></p>
+                <div className="flex gap-6">
+                  {eventDurationOptions.map((opt, i) => (
+                    <label key={i} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="duration" value={opt}
+                        checked={form.eventDuration === opt}
+                        onChange={() => handleChange('eventDuration', opt)}
+                        style={{ accentColor: '#068BC9' }} />
+                      <span className="text-sm text-gray-700">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.eventDuration && <p className="text-xs text-red-400 mt-1">{errors.eventDuration}</p>}
+              </div>
+            </div>
+
+            {/* Services Required */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Services Required</h3>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {servicesList.map((service, i) => (
+                  <label key={i} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox"
+                      checked={form.servicesRequired.includes(service)}
+                      onChange={() => toggleService(service)}
+                      style={{ accentColor: '#068BC9' }} />
+                    <span className="text-xs text-gray-600">{service}</span>
+                  </label>
+                ))}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox"
+                    checked={form.servicesRequired.length === servicesList.length}
+                    onChange={toggleAllServices}
+                    style={{ accentColor: '#068BC9' }} />
+                  <span className="text-xs font-medium text-gray-700">All</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox"
+                    checked={isOtherServiceSelected}
+                    onChange={() => setIsOtherServiceSelected(!isOtherServiceSelected)}
+                    style={{ accentColor: '#068BC9' }} />
+                  <span className="text-xs text-gray-600">Others</span>
+                </label>
+              </div>
+
+              {isOtherServiceSelected && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-400 mb-1">Please specify other services</p>
+                  <textarea rows={2} value={customServiceValue}
+                    onChange={e => setCustomServiceValue(e.target.value)}
+                    maxLength={500}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Event Details */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Event Details</h3>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Preferred Event Date <span className="text-red-400">*</span></p>
-                <input type="date" value={form.eventDate}
-                  onChange={e => handleChange('eventDate', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.eventDate && <p className="text-xs text-red-400 mt-1">{errors.eventDate}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Number of Heads <span className="text-red-400">*</span></p>
-                <input type="number" min="1" value={form.participants}
-                  onChange={e => handleChange('participants', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.participants && <p className="text-xs text-red-400 mt-1">{errors.participants}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Preferred Location/City <span className="text-red-400">*</span></p>
-                <input type="text" value={form.location}
-                  onChange={e => handleChange('location', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.location && <p className="text-xs text-red-400 mt-1">{errors.location}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Venue <span className="text-red-400">*</span></p>
-                <input type="text" value={form.venue}
-                  onChange={e => handleChange('venue', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.venue && <p className="text-xs text-red-400 mt-1">{errors.venue}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Budget Range (₹) <span className="text-red-400">*</span></p>
-                <input type="number" min="1" value={form.budget}
-                  onChange={e => handleChange('budget', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.budget && <p className="text-xs text-red-400 mt-1">{errors.budget}</p>}
-              </div>
+            {/* Notes */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Any Specific Theme/Ideas or Notes</h3>
+              <textarea rows={4} value={form.eventNotes}
+                onChange={e => handleChange('eventNotes', e.target.value)}
+                maxLength={3000}
+                placeholder="Enter any specific theme, ideas or notes..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
             </div>
 
-            {/* Duration */}
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Duration <span className="text-red-400">*</span></p>
-              <div className="flex gap-6">
-                {eventDurationOptions.map((opt, i) => (
-                  <label key={i} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="duration" value={opt}
-                      checked={form.eventDuration === opt}
-                      onChange={() => handleChange('eventDuration', opt)}
-                      style={{ accentColor: '#068BC9' }} />
-                    <span className="text-sm text-gray-700">{opt}</span>
-                  </label>
-                ))}
-              </div>
-              {errors.eventDuration && <p className="text-xs text-red-400 mt-1">{errors.eventDuration}</p>}
-            </div>
-          </div>
-
-          {/* Services Required */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Services Required</h3>
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              {servicesList.map((service, i) => (
-                <label key={i} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox"
-                    checked={form.servicesRequired.includes(service)}
-                    onChange={() => toggleService(service)}
-                    style={{ accentColor: '#068BC9' }} />
-                  <span className="text-xs text-gray-600">{service}</span>
-                </label>
-              ))}
-
-              {/* Select All */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox"
-                  checked={form.servicesRequired.length === servicesList.length}
-                  onChange={toggleAllServices}
-                  style={{ accentColor: '#068BC9' }} />
-                <span className="text-xs font-medium text-gray-700">All</span>
-              </label>
-
-              {/* Others */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox"
-                  checked={isOtherServiceSelected}
-                  onChange={() => setIsOtherServiceSelected(!isOtherServiceSelected)}
-                  style={{ accentColor: '#068BC9' }} />
-                <span className="text-xs text-gray-600">Others</span>
-              </label>
-            </div>
-
-            {isOtherServiceSelected && (
-              <div className="mt-2">
-                <p className="text-xs text-gray-400 mb-1">Please specify other services</p>
-                <textarea rows={2} value={customServiceValue}
-                  onChange={e => setCustomServiceValue(e.target.value)}
-                  maxLength={500}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
-              </div>
+            {errors.submit && (
+              <p className="text-sm text-red-500 text-center mb-3">{errors.submit}</p>
             )}
-          </div>
 
-          {/* Notes */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Any Specific Theme/Ideas or Notes</h3>
-            <textarea rows={4} value={form.eventNotes}
-              onChange={e => handleChange('eventNotes', e.target.value)}
-              maxLength={3000}
-              placeholder="Enter any specific theme, ideas or notes..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 pb-6">
-            <button onClick={() => navigate('/events')}
-              className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleSubmit}
-              className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#068BC9' }}>
-              Submit Request
-            </button>
-          </div>
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pb-6">
+              <button onClick={() => navigate('/events')}
+                className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSubmit}
+                disabled={submitting}
+                className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: '#068BC9' }}>
+                {submitting ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
 
           </div>
         </div>

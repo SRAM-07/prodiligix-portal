@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
 import { MdArrowBack } from 'react-icons/md';
+import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
 
@@ -10,6 +12,7 @@ export default function StampPaperForm() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     firstPartyName: '',
@@ -28,7 +31,6 @@ export default function StampPaperForm() {
     setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-  // Pricing logic from spec doc
   const calculateCharges = () => {
     const denom = parseFloat(form.denomination) || 0;
     const qty = parseInt(form.quantity) || 0;
@@ -71,10 +73,37 @@ export default function StampPaperForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setSubmitted(true);
-    setTimeout(() => navigate('/stamp-paper'), 2500);
+    setSubmitting(true);
+
+    const user = getCurrentUser(); 
+
+    try {
+      await api.post('/api/stamp-paper', {
+        companyId: user?.companyId, 
+        firstPartyName: form.firstPartyName,
+        firstPartyPan: form.firstPartyPan || null,
+        secondPartyName: form.secondPartyName,
+        secondPartyPan: form.secondPartyPan || null,
+        considerationValue: parseFloat(form.considerationValue) || 0,
+        denomination: parseFloat(form.denomination),
+        description: form.description,
+        quantity: parseInt(form.quantity),
+        stampDutyPaidBy: form.stampDutyPaidBy,
+        procurementCharges: parseFloat(charges.procurementCharge),
+        gstFee: parseFloat(charges.gstFee),
+        totalCharges: parseFloat(charges.totalCharges),
+      });
+
+      setSubmitted(true);
+      setTimeout(() => navigate('/stamp-paper'), 2500);
+    } catch (error) {
+      console.error('Failed to book stamp paper:', error);
+      setErrors({ submit: error.response?.data?.message || 'Failed to submit. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -130,133 +159,140 @@ export default function StampPaperForm() {
           />
           <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
-          {/* Party Details */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Party Details</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">First Party Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.firstPartyName}
-                  onChange={e => handleChange('firstPartyName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.firstPartyName && <p className="text-xs text-red-400 mt-1">{errors.firstPartyName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">First Party PAN Number</p>
-                <input type="text" value={form.firstPartyPan}
-                  onChange={e => handleChange('firstPartyPan', e.target.value)}
-                  placeholder="Optional"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Second Party Name <span className="text-red-400">*</span></p>
-                <input type="text" value={form.secondPartyName}
-                  onChange={e => handleChange('secondPartyName', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.secondPartyName && <p className="text-xs text-red-400 mt-1">{errors.secondPartyName}</p>}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Second Party PAN Number</p>
-                <input type="text" value={form.secondPartyPan}
-                  onChange={e => handleChange('secondPartyPan', e.target.value)}
-                  placeholder="Optional"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* Stamp Paper Details */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Stamp Paper Details</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Consideration Value</p>
-                <input type="number" min="0" value={form.considerationValue}
-                  onChange={e => handleChange('considerationValue', e.target.value)}
-                  placeholder="Enter consideration value"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Denomination of Stamp Paper <span className="text-red-400">*</span></p>
-                <input type="number" min="0" value={form.denomination}
-                  onChange={e => handleChange('denomination', e.target.value)}
-                  placeholder="e.g. 100, 500, 1000"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                {errors.denomination && <p className="text-xs text-red-400 mt-1">{errors.denomination}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Description <span className="text-red-400">*</span></p>
-                <textarea rows={3} value={form.description}
-                  onChange={e => handleChange('description', e.target.value)}
-                  placeholder="Enter description of stamp paper"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
-                {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description}</p>}
-              </div>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Stamp Duty Paid By <span className="text-red-400">*</span></p>
-                  <select value={form.stampDutyPaidBy}
-                    onChange={e => handleChange('stampDutyPaidBy', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                    <option value="">Select</option>
-                    {stampDutyOptions.map((o, i) => <option key={i}>{o}</option>)}
-                  </select>
-                  {errors.stampDutyPaidBy && <p className="text-xs text-red-400 mt-1">{errors.stampDutyPaidBy}</p>}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Quantity <span className="text-red-400">*</span></p>
-                  <input type="number" min="1" value={form.quantity}
-                    onChange={e => handleChange('quantity', e.target.value)}
-                    placeholder="Enter quantity"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                  {errors.quantity && <p className="text-xs text-red-400 mt-1">{errors.quantity}</p>}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Charges Summary */}
-          {parseFloat(form.denomination) > 0 && parseInt(form.quantity) > 0 && (
+            {/* Party Details */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Charges Summary</h3>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400 mb-1">Total Amount</p>
-                  <p className="text-sm font-semibold text-gray-700">₹{charges.totalAmount}</p>
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Party Details</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">First Party Name <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.firstPartyName}
+                    onChange={e => handleChange('firstPartyName', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.firstPartyName && <p className="text-xs text-red-400 mt-1">{errors.firstPartyName}</p>}
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400 mb-1">Procurement Charge</p>
-                  <p className="text-sm font-semibold text-gray-700">₹{charges.procurementCharge}</p>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">First Party PAN Number</p>
+                  <input type="text" value={form.firstPartyPan}
+                    onChange={e => handleChange('firstPartyPan', e.target.value)}
+                    placeholder="Optional"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400 mb-1">GST (18%)</p>
-                  <p className="text-sm font-semibold text-gray-700">₹{charges.gstFee}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Second Party Name <span className="text-red-400">*</span></p>
+                  <input type="text" value={form.secondPartyName}
+                    onChange={e => handleChange('secondPartyName', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.secondPartyName && <p className="text-xs text-red-400 mt-1">{errors.secondPartyName}</p>}
                 </div>
-                <div className="rounded-lg p-3 text-center"
-                  style={{ backgroundColor: '#e0f2fe' }}>
-                  <p className="text-xs mb-1" style={{ color: '#068BC9' }}>Total Charges</p>
-                  <p className="text-sm font-bold" style={{ color: '#068BC9' }}>₹{charges.totalCharges}</p>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Second Party PAN Number</p>
+                  <input type="text" value={form.secondPartyPan}
+                    onChange={e => handleChange('secondPartyPan', e.target.value)}
+                    placeholder="Optional"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 pb-6">
-            <button onClick={() => navigate('/stamp-paper')}
-              className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleSubmit}
-              className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#068BC9' }}>
-              Book Stamp Paper
-            </button>
-          </div>
+            {/* Stamp Paper Details */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Stamp Paper Details</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Consideration Value</p>
+                  <input type="number" min="0" value={form.considerationValue}
+                    onChange={e => handleChange('considerationValue', e.target.value)}
+                    placeholder="Enter consideration value"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Denomination of Stamp Paper <span className="text-red-400">*</span></p>
+                  <input type="number" min="0" value={form.denomination}
+                    onChange={e => handleChange('denomination', e.target.value)}
+                    placeholder="e.g. 100, 500, 1000"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.denomination && <p className="text-xs text-red-400 mt-1">{errors.denomination}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Description <span className="text-red-400">*</span></p>
+                  <textarea rows={3} value={form.description}
+                    onChange={e => handleChange('description', e.target.value)}
+                    placeholder="Enter description of stamp paper"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none resize-none" />
+                  {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description}</p>}
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Stamp Duty Paid By <span className="text-red-400">*</span></p>
+                    <select value={form.stampDutyPaidBy}
+                      onChange={e => handleChange('stampDutyPaidBy', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                      <option value="">Select</option>
+                      {stampDutyOptions.map((o, i) => <option key={i}>{o}</option>)}
+                    </select>
+                    {errors.stampDutyPaidBy && <p className="text-xs text-red-400 mt-1">{errors.stampDutyPaidBy}</p>}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Quantity <span className="text-red-400">*</span></p>
+                    <input type="number" min="1" value={form.quantity}
+                      onChange={e => handleChange('quantity', e.target.value)}
+                      placeholder="Enter quantity"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                    {errors.quantity && <p className="text-xs text-red-400 mt-1">{errors.quantity}</p>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Charges Summary */}
+            {parseFloat(form.denomination) > 0 && parseInt(form.quantity) > 0 && (
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Charges Summary</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-400 mb-1">Total Amount</p>
+                    <p className="text-sm font-semibold text-gray-700">₹{charges.totalAmount}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-400 mb-1">Procurement Charge</p>
+                    <p className="text-sm font-semibold text-gray-700">₹{charges.procurementCharge}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-400 mb-1">GST (18%)</p>
+                    <p className="text-sm font-semibold text-gray-700">₹{charges.gstFee}</p>
+                  </div>
+                  <div className="rounded-lg p-3 text-center"
+                    style={{ backgroundColor: '#e0f2fe' }}>
+                    <p className="text-xs mb-1" style={{ color: '#068BC9' }}>Total Charges</p>
+                    <p className="text-sm font-bold" style={{ color: '#068BC9' }}>₹{charges.totalCharges}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Submit error */}
+            {errors.submit && (
+              <p className="text-sm text-red-500 text-center mb-3">{errors.submit}</p>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pb-6">
+              <button onClick={() => navigate('/stamp-paper')}
+                className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: '#068BC9' }}>
+                {submitting ? 'Submitting...' : 'Book Stamp Paper'}
+              </button>
+            </div>
 
           </div>
         </div>

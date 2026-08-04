@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
-import { MdArrowBack, MdAdd, MdClose } from 'react-icons/md';
+import { MdArrowBack, MdClose } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 
@@ -18,7 +18,7 @@ const quantityOptions = ['50', '50-100', '100-200', '250-500', '500+', 'Others']
 const deliveryTypeOptions = [
   'Bulk Delivery to One Location',
   'Individual Deliveries (PAN-India)',
-  'International Deliveries (If applicable)',
+  'Retail',
 ];
 
 const productOptions = [
@@ -96,12 +96,20 @@ export default function CorporateGiftingForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [companyName, setCompanyName] = useState('');
 
   const user = getCurrentUser();
   const companyId = user?.companyId || 1;
 
+  useEffect(() => {
+    if (companyId) {
+      api.get(`/api/companies/${companyId}`)
+        .then(res => setCompanyName(res.data.businessName || ''))
+        .catch(console.error);
+    }
+  }, [companyId]);
+
   const [form, setForm] = useState({
-    companyName: '',
     contactPersonName: '',
     designation: '',
     primaryPhone: '',
@@ -130,7 +138,6 @@ export default function CorporateGiftingForm() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.companyName) newErrors.companyName = 'Required';
     if (!form.contactPersonName) newErrors.contactPersonName = 'Required';
     if (!form.primaryPhone || !/^\d{10}$/.test(form.primaryPhone)) newErrors.primaryPhone = 'Enter valid 10-digit number';
     if (!form.requiredDeliveryDate) newErrors.requiredDeliveryDate = 'Required';
@@ -140,13 +147,12 @@ export default function CorporateGiftingForm() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     setSubmitting(true);
     try {
       const payload = {
         companyId,
         userId: user?.id,
-        companyName: form.companyName,
+        companyName,
         contactPersonName: form.contactPersonName,
         designation: form.designation,
         email: form.email,
@@ -169,7 +175,6 @@ export default function CorporateGiftingForm() {
       };
 
       await api.post('/api/corporate-giftings', payload);
-
       setSubmitted(true);
       setTimeout(() => navigate('/gifting'), 2500);
     } catch (error) {
@@ -217,21 +222,15 @@ export default function CorporateGiftingForm() {
           </div>
         </div>
 
-        <div
-          className="relative min-h-screen overflow-hidden"
-          style={{ backgroundColor: '#F7FBFF' }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${process.env.PUBLIC_URL}/corporate-gifting-bg.png)`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'left bottom',
-              backgroundSize: 'contain',
-              opacity: 0.22,
-              pointerEvents: 'none'
-            }}
-          />
+        <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#F7FBFF' }}>
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url(${process.env.PUBLIC_URL}/corporate-gifting-bg.png)`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'left bottom',
+            backgroundSize: 'contain',
+            opacity: 0.22,
+            pointerEvents: 'none'
+          }} />
           <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
             {/* Company Information */}
@@ -239,11 +238,10 @@ export default function CorporateGiftingForm() {
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Information</h3>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Company Name <span className="text-red-400">*</span></p>
-                  <input type="text" value={form.companyName}
-                    onChange={e => handleChange('companyName', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                  {errors.companyName && <p className="text-xs text-red-400 mt-1">{errors.companyName}</p>}
+                  <p className="text-xs text-gray-400 mb-1">Company Name</p>
+                  <div className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700">
+                    {companyName || '—'}
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Contact Person Name <span className="text-red-400">*</span></p>
@@ -354,7 +352,6 @@ export default function CorporateGiftingForm() {
                 </div>
               )}
 
-              {/* Dynamic brand selectors per item */}
               <div className="grid grid-cols-2 gap-4">
                 {form.preferredItems.filter(item => item !== 'Other Suggestions').map((item, i) => (
                   <div key={i}>

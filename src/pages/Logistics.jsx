@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync, MdLocalShipping } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync, MdLocalShipping, MdEdit } from 'react-icons/md';
 import api from '../services/api';
 import SetRateDialog from '../components/SetRateDialog';
 import BookWithCarrierDialog from '../components/BookWithCarrierDialog';
 import SetAwbDialog from '../components/SetAwbDialog';
+import EditShipmentDialog from '../components/EditShipmentDialog';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
@@ -49,6 +50,7 @@ export default function Logistics() {
   const [rateDialogShipment, setRateDialogShipment] = useState(null);
   const [bookingDialogShipment, setBookingDialogShipment] = useState(null);
   const [awbDialogShipment, setAwbDialogShipment] = useState(null);
+  const [editDialogShipment, setEditDialogShipment] = useState(null);
   const [syncingId, setSyncingId] = useState(null);
   const [sendingEmailId, setSendingEmailId] = useState(null);
   const [toast, setToast] = useState('');
@@ -362,6 +364,8 @@ export default function Logistics() {
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {order.expectedDeliveryDate ? order.expectedDeliveryDate.split('T')[0] : '—'}
                         </td>
+
+                        {/* Docs column */}
                         <td className="px-4 py-3 whitespace-nowrap relative">
                           {docs.length > 0 ? (
                             <div className="relative">
@@ -391,6 +395,8 @@ export default function Logistics() {
                             <span className="text-xs text-gray-400">No Docs</span>
                           )}
                         </td>
+
+                        {/* Email Label column */}
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           {order.shipmentWithLabel ? (
                             <button
@@ -404,8 +410,22 @@ export default function Logistics() {
                             <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
+
+                        {/* Rate Action column */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
+
+                            {/* Edit button — always first */}
+                            {order.deliveryStatus !== 'Cancelled' && (
+                              <button
+                                onClick={() => setEditDialogShipment(order)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                                style={{ color: '#6b7280', backgroundColor: '#f3f4f6' }}> 
+                                <MdEdit size={14} />
+                                Edit
+                              </button>
+                            )}
+
                             {!order.shipmentAwbNumber && order.deliveryStatus !== 'Cancelled' && (
                               <button
                                 onClick={() => setBookingDialogShipment(order)}
@@ -430,16 +450,6 @@ export default function Logistics() {
                                 style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
                                 <MdAttachMoney size={14} />
                                 {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
-                              </button>
-                            )}
-                            {order.shipmentAwbNumber && (
-                              <button
-                                onClick={() => handleSyncTracking(order.id)}
-                                disabled={syncingId === order.id}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                                style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
-                                <MdSync size={14} className={syncingId === order.id ? 'animate-spin' : ''} />
-                                {syncingId === order.id ? 'Syncing...' : 'Sync'}
                               </button>
                             )}
                           </div>
@@ -518,6 +528,15 @@ export default function Logistics() {
           onSuccess={handleRateSuccess}
         />
       )}
+
+      {editDialogShipment && (
+        <EditShipmentDialog
+          shipment={editDialogShipment}
+          onClose={() => setEditDialogShipment(null)}
+          onSuccess={(msg) => { setToast(msg); fetchShipments(); }}
+        />
+      )}
+
     </div>
   );
 }

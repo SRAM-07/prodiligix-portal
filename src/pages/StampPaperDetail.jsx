@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MdArrowBack, MdDownload, MdAttachFile, MdPerson, MdDescription, MdAdminPanelSettings, MdUpload, MdClose } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 import SmartSidebar from '../components/SmartSidebar';
 
 const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
@@ -19,6 +20,8 @@ const statusConfig = {
 export default function StampPaperDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const user = getCurrentUser();
+  const isAdmin = user?.role !== 'company_user';
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -223,100 +226,102 @@ export default function StampPaperDetail() {
             </div>
           </div>
 
-          {/* Admin Section */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-            <div className="flex items-center gap-2 mb-4">
-              <MdAdminPanelSettings size={18} style={{ color: '#068BC9' }} />
-              <p className="text-sm font-semibold text-gray-700">Admin Section</p>
-            </div>
-
-            {/* Charges */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              {[
-                { label: 'Procurement Charges', value: `₹${detail.procurementCharges || 0}` },
-                { label: 'GST on Procurement Fee', value: `₹${detail.gstFee || 0}` },
-                { label: 'Total Charges', value: `₹${detail.totalCharges || 0}`, highlight: true },
-              ].map((f, i) => (
-                <div key={i}>
-                  <p className="text-xs text-gray-400 mb-1">{f.label}</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                    <span className="text-sm font-semibold"
-                      style={{ color: f.highlight ? '#068BC9' : '#374151' }}>
-                      {f.value}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Status + Delivery Date */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Status</p>
-                <select
-                  value={status}
-                  onChange={e => setStatus(e.target.value)}
-                  disabled={isCancelled}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  {statusOptions.map((opt, i) => (
-                    <option key={i}>{opt}</option>
-                  ))}
-                </select>
+          {/* Admin Section — hidden for company_user */}
+          {isAdmin && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <div className="flex items-center gap-2 mb-4">
+                <MdAdminPanelSettings size={18} style={{ color: '#068BC9' }} />
+                <p className="text-sm font-semibold text-gray-700">Admin Section</p>
               </div>
-              {isDelivered && (
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Delivery Date</p>
-                  <input
-                    type="date"
-                    value={deliveryDate}
-                    onChange={e => setDeliveryDate(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none"
-                  />
-                </div>
-              )}
-            </div>
 
-            {/* Upload Stamp Paper */}
-            <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-1">Upload Stamp Paper (PDF)</p>
-              {detail.scannedCopy ? (
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
-                  <div className="flex items-center gap-2">
-                    <MdAttachFile size={16} style={{ color: '#068BC9' }} />
-                    <span className="text-sm text-gray-600 truncate">Document.pdf</span>
-                  </div>
-                  <button
-                    onClick={() => window.open(detail.scannedCopy, '_blank')}
-                    className="p-1 rounded hover:bg-gray-100">
-                    <MdDownload size={16} style={{ color: '#068BC9' }} />
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                    <MdUpload size={18} style={{ color: '#068BC9' }} />
-                    <span className="text-sm text-gray-500">
-                      {uploadFile ? uploadFile.name : 'Click to upload PDF'}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={e => setUploadFile(e.target.files[0])}
-                    />
-                  </label>
-                  {uploadFile && (
-                    <div className="flex items-center justify-between mt-2 bg-blue-50 rounded-lg px-3 py-2">
-                      <span className="text-xs text-gray-600">{uploadFile.name}</span>
-                      <button onClick={() => setUploadFile(null)}>
-                        <MdClose size={14} className="text-gray-400" />
-                      </button>
+              {/* Charges */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {[
+                  { label: 'Procurement Charges', value: `₹${detail.procurementCharges || 0}` },
+                  { label: 'GST on Procurement Fee', value: `₹${detail.gstFee || 0}` },
+                  { label: 'Total Charges', value: `₹${detail.totalCharges || 0}`, highlight: true },
+                ].map((f, i) => (
+                  <div key={i}>
+                    <p className="text-xs text-gray-400 mb-1">{f.label}</p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                      <span className="text-sm font-semibold"
+                        style={{ color: f.highlight ? '#068BC9' : '#374151' }}>
+                        {f.value}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Status + Delivery Date */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Status</p>
+                  <select
+                    value={status}
+                    onChange={e => setStatus(e.target.value)}
+                    disabled={isCancelled}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                    {statusOptions.map((opt, i) => (
+                      <option key={i}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
+                {isDelivered && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Delivery Date</p>
+                    <input
+                      type="date"
+                      value={deliveryDate}
+                      onChange={e => setDeliveryDate(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Stamp Paper — admin only */}
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 mb-1">Upload Stamp Paper (PDF)</p>
+                {detail.scannedCopy ? (
+                  <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <MdAttachFile size={16} style={{ color: '#068BC9' }} />
+                      <span className="text-sm text-gray-600 truncate">Document.pdf</span>
+                    </div>
+                    <button
+                      onClick={() => window.open(detail.scannedCopy, '_blank')}
+                      className="p-1 rounded hover:bg-gray-100">
+                      <MdDownload size={16} style={{ color: '#068BC9' }} />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                      <MdUpload size={18} style={{ color: '#068BC9' }} />
+                      <span className="text-sm text-gray-500">
+                        {uploadFile ? uploadFile.name : 'Click to upload PDF'}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={e => setUploadFile(e.target.files[0])}
+                      />
+                    </label>
+                    {uploadFile && (
+                      <div className="flex items-center justify-between mt-2 bg-blue-50 rounded-lg px-3 py-2">
+                        <span className="text-xs text-gray-600">{uploadFile.name}</span>
+                        <button onClick={() => setUploadFile(null)}>
+                          <MdClose size={14} className="text-gray-400" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action buttons */}
           <div className="flex justify-between items-center pb-4">
@@ -335,7 +340,7 @@ export default function StampPaperDetail() {
                 className="px-6 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors">
                 Back
               </button>
-              {!isCancelled && (
+              {isAdmin && !isCancelled && (
                 <button
                   onClick={handleUpdateStatus}
                   disabled={updating}
