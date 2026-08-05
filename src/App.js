@@ -17,6 +17,7 @@ import ITSolutionsDetail from './pages/ITSolutionsDetail';
 import RateCalculator from './pages/RateCalculator';
 import Reports from './pages/Reports';
 import Companies from './pages/Companies';
+import Addresses from './pages/Addresses';
 import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
@@ -86,6 +87,9 @@ function App() {
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
             <NewCompany />
           </ProtectedRoute>
+        } />
+        <Route path="/addresses" element={
+            <ProtectedRoute><Addresses /></ProtectedRoute>
         } />
         <Route path="/companies/:id" element={
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>

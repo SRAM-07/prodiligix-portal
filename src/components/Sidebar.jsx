@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getCurrentUser } from '../services/authService';
-import { MdBusiness } from 'react-icons/md';
+import { MdBusiness, MdLocationOn } from 'react-icons/md';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   MdDashboard, 
@@ -120,7 +120,8 @@ export default function Sidebar({ onToggle }) {
   const currentUser = getCurrentUser();
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const sections = isSuperAdmin
-    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdBusiness size={20}/>, label: 'Companies', path: '/companies' }] }]
+    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdBusiness size={20}/>, label: 'Companies', path: '/companies' },
+          { icon: <MdLocationOn size={20}/>, label: 'Addresses', path: '/addresses' }] }]
     : menuSections;
   const navigate = useNavigate();
   const location = useLocation();
