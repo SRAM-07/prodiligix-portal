@@ -4,11 +4,16 @@ import SmartSidebar from '../components/SmartSidebar';
 import {
   MdArrowBack, MdDownload, MdAttachFile,
   MdLocalShipping, MdLocationOn, MdInventory,
-  MdCheckCircle, MdUpload, MdSync
+  MdCheckCircle, MdUpload, MdSync, MdEdit,
+  MdAttachMoney
 } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 import CancelShipmentDialog from '../components/CancelShipmentDialog';
+import EditShipmentDialog from '../components/EditShipmentDialog';
+import SetRateDialog from '../components/SetRateDialog';
+import BookWithCarrierDialog from '../components/BookWithCarrierDialog';
+import SetAwbDialog from '../components/SetAwbDialog';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE_URL}${path}`) : null;
@@ -38,6 +43,10 @@ export default function OrderDetail() {
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRateDialog, setShowRateDialog] = useState(false);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [showAwbDialog, setShowAwbDialog] = useState(false);
 
   const tabs = ['details', 'documents', 'tracking'];
 
@@ -319,6 +328,47 @@ export default function OrderDetail() {
                 </div>
               </div>
 
+              {/* Admin Actions — only for non-client users */}
+              {!isClient && shipment.deliveryStatus !== 'Cancelled' && (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <p className="text-sm font-semibold text-gray-700 mb-4">Admin Actions</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => setShowEditDialog(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: '#6b7280', backgroundColor: '#f3f4f6' }}>
+                      <MdEdit size={16} />
+                      Edit Shipment
+                    </button>
+
+                    {!shipment.shipmentAwbNumber && (
+                      <button
+                        onClick={() => setShowBookingDialog(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        style={{ color: '#7c3aed', backgroundColor: '#ede9fe' }}>
+                        <MdLocalShipping size={16} />
+                        Book Carrier
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => setShowAwbDialog(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: '#0d9488', backgroundColor: '#ccfbf1' }}>
+                      {shipment.shipmentAwbNumber ? 'Update AWB' : 'Set AWB'}
+                    </button>
+
+                    <button
+                      onClick={() => setShowRateDialog(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                      <MdAttachMoney size={16} />
+                      {shipment.shipmentRate ? 'Update Rate' : 'Set Rate'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Approval banner */}
               {shipment.requestApproved ? (
                 <div className="rounded-xl p-4 border flex items-start gap-3"
@@ -507,6 +557,41 @@ export default function OrderDetail() {
           }}
         />
       )}
+
+      {showEditDialog && (
+        <EditShipmentDialog
+          shipment={shipment}
+          onClose={() => setShowEditDialog(false)}
+          onSuccess={(msg) => { setToast(msg); fetchAll(); }}
+        />
+      )}
+
+      {showRateDialog && (
+        <SetRateDialog
+          shipmentId={shipment.id}
+          currentRate={shipment.shipmentRate}
+          onClose={() => setShowRateDialog(false)}
+          onSuccess={(msg) => { setToast(msg); fetchAll(); }}
+        />
+      )}
+
+      {showBookingDialog && (
+        <BookWithCarrierDialog
+          shipment={shipment}
+          onClose={() => setShowBookingDialog(false)}
+          onSuccess={(msg) => { setToast(msg); fetchAll(); }}
+        />
+      )}
+
+      {showAwbDialog && (
+        <SetAwbDialog
+          shipmentId={shipment.id}
+          currentAwb={shipment.shipmentAwbNumber}
+          onClose={() => setShowAwbDialog(false)}
+          onSuccess={(msg) => { setToast(msg); fetchAll(); }}
+        />
+      )}
+
     </div>
   );
 }

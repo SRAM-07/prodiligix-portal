@@ -8,7 +8,16 @@ import { getCurrentUser } from '../services/authService';
 import api from '../services/api';
 
 const transportModes = ['Air', 'Air Urgent', 'Surface', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
-const transporters = ['Bluedart', 'DelhiveryOne', 'NimbusPost'];
+
+const TRANSPORTERS_BY_MODE = {
+  'Air': ['Delhivery', 'Bluedart', 'Indigo', 'Air India', 'Akasa Air', 'Royal King Courier Services'],
+  'Air Urgent': ['Indigo', 'Air India', 'Akasa Air', 'Bluedart'],
+  'Surface': ['Delhivery', 'Bluedart'],
+  'Surface Urgent': ['Delhivery', 'Bluedart', 'Royal King Courier Services', 'Porter'],
+  'PTL (Part Truck Load)': ['Delhivery', 'Royal King Courier Services', 'DSN'],
+  'FTL (FullTruckLoad)': ['DSN', 'Royal King Courier Services'],
+};
+
 const modeTypes = ['Forward', 'Reverse', 'Point to Point'];
 const shipmentDetails = ['Laptops', 'Documents', 'Electronics', 'Mobile Phones', 'Other'];
 const boxTypes = ['Corrugated Box', 'Wooden Box', 'Plastic Box', 'Envelope'];
@@ -25,7 +34,7 @@ export default function BookShipment() {
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [ewayFile, setEwayFile] = useState(null);
   const [errors, setErrors] = useState({});
-  const [showAddAddress, setShowAddAddress] = useState(null); // 'pickup' | 'delivery' | null
+  const [showAddAddress, setShowAddAddress] = useState(null);
   const [addressRefreshKey, setAddressRefreshKey] = useState(0);
 
   const [form, setForm] = useState({
@@ -59,6 +68,13 @@ export default function BookShipment() {
   const [rateError, setRateError] = useState('');
 
   const isUrgentMode = URGENT_OR_MANUAL_MODES.includes(form.transportMode);
+
+  // Reset transporter when transport mode changes
+  useEffect(() => {
+    setForm(prev => ({ ...prev, transporter: '' }));
+    setCalculatedRate(null);
+    setRateError('');
+  }, [form.transportMode]);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -162,11 +178,10 @@ export default function BookShipment() {
 
     return () => clearTimeout(timeout);
   }, [isUrgentMode, form.pickupPincode, form.deliveryPincode, form.transportMode, form.transporter,
-      form.declaredValue, form.insurance, form.packaging, scanWeight, companyId]);
+    form.declaredValue, form.insurance, form.packaging, scanWeight, companyId]);
 
   const validate = () => {
     const newErrors = {};
-
     if (!form.pickupAddressId) newErrors.pickupAddressId = 'Pickup address is required';
     if (!form.deliveryAddressId) newErrors.deliveryAddressId = 'Delivery address is required';
     if (!form.transportMode) newErrors.transportMode = 'Transport mode is required';
@@ -192,7 +207,6 @@ export default function BookShipment() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     setSubmitting(true);
     try {
       const payload = {
@@ -295,21 +309,15 @@ export default function BookShipment() {
         </div>
       </div>
 
-      <div
-        className="relative min-h-screen overflow-hidden"
-        style={{ backgroundColor: '#F7FBFF' }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${process.env.PUBLIC_URL}/shipment-bg.png)`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'left bottom',
-            backgroundSize: 'contain',
-            opacity: 0.22,
-            pointerEvents: 'none'
-          }}
-        />
+      <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#F7FBFF' }}>
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${process.env.PUBLIC_URL}/shipment-bg.png)`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'left bottom',
+          backgroundSize: 'contain',
+          opacity: 0.22,
+          pointerEvents: 'none'
+        }} />
         <div className="relative z-10 p-6 max-w-4xl mx-auto">
 
           {/* Addresses */}
@@ -388,9 +396,14 @@ export default function BookShipment() {
                 <select
                   value={form.transporter}
                   onChange={e => handleChange('transporter', e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
-                  <option value="">Select Transporter</option>
-                  {transporters.map((t, i) => <option key={i}>{t}</option>)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none"
+                  disabled={!form.transportMode}>
+                  <option value="">
+                    {form.transportMode ? 'Select Transporter' : 'Select mode first'}
+                  </option>
+                  {(TRANSPORTERS_BY_MODE[form.transportMode] || []).map((t, i) => (
+                    <option key={i}>{t}</option>
+                  ))}
                 </select>
                 {errors.transporter && <p className="text-xs text-red-400 mt-1">{errors.transporter}</p>}
               </div>
@@ -497,7 +510,6 @@ export default function BookShipment() {
 
           {/* Weight + Boxes */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
-
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
                 <p className="text-xs text-gray-400 mb-1">
@@ -551,140 +563,146 @@ export default function BookShipment() {
                   {errors.manualRate && <p className="text-xs text-red-400 mt-1">{errors.manualRate}</p>}
                 </div>
               ) : (
-                <div
-                  className="rounded-xl px-8 py-3 text-center text-white min-w-[160px]"
-                  style={{ backgroundColor: rateLoading ? '#9ca3af' : calculatedRate ? '#22c55e' : '#0b65a1' }}>
-                  <p className="text-xs opacity-80">Final Rate</p>
-                  <p className="text-2xl font-bold">
-                    {rateLoading ? '...' : calculatedRate ? `₹${parseFloat(calculatedRate).toFixed(2)}` : '—'}
-                  </p>
-                  {rateError && (
-                    <p className="text-xs opacity-90 mt-1">{rateError}</p>
-                  )}
+                <div className="text-right">
+                  <p className="text-xs text-gray-400 mb-1">Final Rate</p>
+                  <div className="px-6 py-3 rounded-xl text-right min-w-[160px]"
+                    style={{ backgroundColor: calculatedRate ? '#e0f2fe' : '#fee2e2' }}>
+                    {rateLoading ? (
+                      <p className="text-sm font-bold text-gray-400">Calculating...</p>
+                    ) : (
+                      <p className="text-2xl font-bold" style={{ color: calculatedRate ? '#068BC9' : '#ef4444' }}>
+                        ₹{calculatedRate ? calculatedRate.toFixed(2) : '0.00'}
+                      </p>
+                    )}
+                  </div>
+                  {rateError && <p className="text-xs text-orange-400 mt-1 max-w-xs text-right">{rateError}</p>}
                 </div>
               )}
             </div>
 
-            {/* Box groups */}
-            <p className="text-sm font-semibold text-gray-700 mb-1">
-              Shipment Dimensions (grouped) <span className="text-red-400">*</span>
-            </p>
-            {errors.boxes && <p className="text-xs text-red-400 mb-2">{errors.boxes}</p>}
-
-            {boxes.map((box, i) => (
-              <div key={box.id} className="border border-gray-200 rounded-xl p-4 mb-3 bg-gray-50">
-                <div className="flex justify-between items-center mb-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Box group {i + 1}</p>
-                    <p className="text-xs text-gray-400">Fill how many boxes and dimensions</p>
-                  </div>
-                  {boxes.length > 1 && (
-                    <button
-                      onClick={() => removeBoxGroup(box.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                      <MdDelete size={16} className="text-red-400" />
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">No. of Boxes (for these dimensions)</p>
-                    <input
-                      type="number"
-                      min="1"
-                      value={box.noOfBoxes}
-                      onChange={e => handleBoxChange(box.id, 'noOfBoxes', e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Box Type</p>
-                    <select
-                      value={box.boxType}
-                      onChange={e => handleBoxChange(box.id, 'boxType', e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
-                      <option value="">Select Box Type</option>
-                      {boxTypes.map((t, i) => <option key={i}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {['length', 'width', 'height'].map(dim => (
-                    <div key={dim}>
-                      <p className="text-xs text-gray-400 mb-1 capitalize">
-                        {dim} ({form.dimensionUnit})
-                      </p>
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={box[dim]}
-                        onChange={e => handleBoxChange(box.id, dim, e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none" />
+            {/* Box Groups */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-700">Box Groups</p>
+                <button
+                  onClick={addBoxGroup}
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
+                  <MdAdd size={14} /> Add Box Group
+                </button>
+              </div>
+              {errors.boxes && <p className="text-xs text-red-400 mb-2">{errors.boxes}</p>}
+              <div className="flex flex-col gap-3">
+                {boxes.map((box, idx) => (
+                  <div key={box.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-medium text-gray-500">Box Group {idx + 1}</p>
+                      {boxes.length > 1 && (
+                        <button onClick={() => removeBoxGroup(box.id)}
+                          className="p-1 rounded hover:bg-red-50">
+                          <MdDelete size={16} className="text-red-400" />
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <button
-              onClick={addBoxGroup}
-              className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border border-dashed border-gray-300 hover:border-blue-300 transition-colors text-gray-500 hover:text-blue-500 w-full justify-center mb-5">
-              <MdAdd size={16} /> Add Box Group
-            </button>
-
-            {/* Auto calculated */}
-            <div className="grid grid-cols-3 gap-4 mb-5">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Volumetric Weight</p>
-                <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <span className="text-sm text-gray-500">{volumetricWeight}</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Scan Weight</p>
-                <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <span className="text-sm text-gray-500">{scanWeight}</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Rate Type</p>
-                <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <span className="text-sm text-gray-500">{rateType}</span>
-                </div>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Box Type</p>
+                        <select
+                          value={box.boxType}
+                          onChange={e => handleBoxChange(box.id, 'boxType', e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none">
+                          <option value="">Select Type</option>
+                          {boxTypes.map((t, i) => <option key={i}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">No. of Boxes</p>
+                        <input type="number" min="1"
+                          value={box.noOfBoxes}
+                          onChange={e => handleBoxChange(box.id, 'noOfBoxes', e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">L</p>
+                          <input type="number"
+                            value={box.length}
+                            onChange={e => handleBoxChange(box.id, 'length', e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">W</p>
+                          <input type="number"
+                            value={box.width}
+                            onChange={e => handleBoxChange(box.id, 'width', e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400 mb-1">H</p>
+                          <input type="number"
+                            value={box.height}
+                            onChange={e => handleBoxChange(box.id, 'height', e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-white rounded-lg px-3 py-2 border border-gray-100">
+                        <p className="text-xs text-gray-400">Volumetric Wt.</p>
+                        <p className="text-sm font-medium text-gray-700">
+                          {((parseFloat(box.length) || 0) * (parseFloat(box.width) || 0) * (parseFloat(box.height) || 0) * (parseInt(box.noOfBoxes) || 1) / (form.transportMode === 'Air' || form.transportMode === 'Air Urgent' ? 5000 : 4000)).toFixed(2)} kg
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Insurance + Package */}
+            {/* Calculated weights summary */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                <p className="text-xs text-gray-400">Total Volumetric Wt.</p>
+                <p className="text-sm font-medium text-gray-700">{volumetricWeight} kg</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                <p className="text-xs text-gray-400">Scan Weight</p>
+                <p className="text-sm font-medium text-gray-700">{scanWeight} kg</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                <p className="text-xs text-gray-400">Rate Type</p>
+                <p className="text-sm font-medium text-gray-700">{rateType}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Insurance & Packaging */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-700 mb-2">Do you need Insurance?</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Do you need Insurance?</p>
                 <div className="flex gap-4">
                   {['yes', 'no'].map(opt => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="insurance"
-                        value={opt}
+                      <input type="radio" name="insurance" value={opt}
                         checked={form.insurance === opt}
                         onChange={() => handleChange('insurance', opt)}
                         style={{ accentColor: '#068BC9' }} />
-                      <span className="text-sm text-gray-700 capitalize">{opt}</span>
+                      <span className="text-sm text-gray-700 capitalize">{opt === 'yes' ? 'Yes' : 'No'}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-700 mb-2">Do you need Package?</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Do you need Package?</p>
                 <div className="flex gap-4">
                   {['yes', 'no'].map(opt => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="packaging"
-                        value={opt}
+                      <input type="radio" name="packaging" value={opt}
                         checked={form.packaging === opt}
                         onChange={() => handleChange('packaging', opt)}
                         style={{ accentColor: '#068BC9' }} />
-                      <span className="text-sm text-gray-700 capitalize">{opt}</span>
+                      <span className="text-sm text-gray-700 capitalize">{opt === 'yes' ? 'Yes' : 'No'}</span>
                     </label>
                   ))}
                 </div>
@@ -692,7 +710,7 @@ export default function BookShipment() {
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Submit */}
           <div className="flex justify-end gap-3 pb-6">
             <button
               onClick={() => navigate('/client/logistics')}
@@ -702,7 +720,7 @@ export default function BookShipment() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="px-8 py-2.5 rounded-lg text-sm text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: '#068BC9' }}>
               {submitting ? 'Booking...' : 'Book Shipment'}
             </button>
@@ -713,18 +731,16 @@ export default function BookShipment() {
 
       {showAddAddress && (
         <AddAddressDialog
+          companyId={companyId}
           type={showAddAddress}
           onClose={() => setShowAddAddress(null)}
-          onSuccess={(newAddress) => {
-            if (showAddAddress === 'pickup') {
-              handlePickupSelect(newAddress);
-            } else {
-              handleDeliverySelect(newAddress);
-            }
-            setAddressRefreshKey(prev => prev + 1);
+          onSuccess={() => {
+            setAddressRefreshKey(k => k + 1);
+            setShowAddAddress(null);
           }}
         />
       )}
+
     </ClientLayout>
   );
 }

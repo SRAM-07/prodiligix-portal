@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline, MdAttachMoney, MdSync, MdLocalShipping, MdEdit } from 'react-icons/md';
+import { MdFilterList, MdRefresh, MdSearch, MdClose, MdDownload, MdExpandMore, MdMailOutline } from 'react-icons/md';
 import api from '../services/api';
-import SetRateDialog from '../components/SetRateDialog';
-import BookWithCarrierDialog from '../components/BookWithCarrierDialog';
-import SetAwbDialog from '../components/SetAwbDialog';
-import EditShipmentDialog from '../components/EditShipmentDialog';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : API_BASE_URL + path) : null;
@@ -47,11 +43,6 @@ export default function Logistics() {
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rateDialogShipment, setRateDialogShipment] = useState(null);
-  const [bookingDialogShipment, setBookingDialogShipment] = useState(null);
-  const [awbDialogShipment, setAwbDialogShipment] = useState(null);
-  const [editDialogShipment, setEditDialogShipment] = useState(null);
-  const [syncingId, setSyncingId] = useState(null);
   const [sendingEmailId, setSendingEmailId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
@@ -109,25 +100,6 @@ export default function Logistics() {
     return docs;
   };
 
-  const handleRateSuccess = (message) => {
-    setToast(message);
-    fetchShipments();
-  };
-
-  const handleSyncTracking = async (shipmentId) => {
-    setSyncingId(shipmentId);
-    try {
-      const res = await api.post(`/api/shipments/${shipmentId}/sync-tracking`);
-      setToast(res.data.message || 'Tracking synced successfully');
-      fetchShipments();
-    } catch (error) {
-      const message = error.response?.data?.error || 'Failed to sync tracking';
-      setToast(message);
-    } finally {
-      setSyncingId(null);
-    }
-  };
-
   const handleSendLabelEmail = async (shipmentId) => {
     setSendingEmailId(shipmentId);
     try {
@@ -154,7 +126,7 @@ export default function Logistics() {
     'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
     'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate', 'Payment Status',
     'AWB Number', 'Delivery Partner', 'Status', 'Created Date', 'Delivery Date',
-    'Expected Delivery Date', 'Actions', 'Email Label', 'Rate Action'
+    'Expected Delivery Date', 'Docs', 'Email Label'
   ];
 
   return (
@@ -410,50 +382,6 @@ export default function Logistics() {
                             <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
-
-                        {/* Rate Action column */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-
-                            {/* Edit button — always first */}
-                            {order.deliveryStatus !== 'Cancelled' && (
-                              <button
-                                onClick={() => setEditDialogShipment(order)}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                                style={{ color: '#6b7280', backgroundColor: '#f3f4f6' }}> 
-                                <MdEdit size={14} />
-                                Edit
-                              </button>
-                            )}
-
-                            {!order.shipmentAwbNumber && order.deliveryStatus !== 'Cancelled' && (
-                              <button
-                                onClick={() => setBookingDialogShipment(order)}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                                style={{ color: '#7c3aed', backgroundColor: '#ede9fe' }}>
-                                <MdLocalShipping size={14} />
-                                Book Carrier
-                              </button>
-                            )}
-                            {order.deliveryStatus !== 'Cancelled' && (
-                              <button
-                                onClick={() => setAwbDialogShipment(order)}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                                style={{ color: '#0d9488', backgroundColor: '#ccfbf1' }}>
-                                {order.shipmentAwbNumber ? 'Update AWB' : 'Set AWB'}
-                              </button>
-                            )}
-                            {order.deliveryStatus !== 'Cancelled' && (
-                              <button
-                                onClick={() => setRateDialogShipment(order)}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                                style={{ color: '#068BC9', backgroundColor: '#e0f2fe' }}>
-                                <MdAttachMoney size={14} />
-                                {order.shipmentRate ? 'Update Rate' : 'Set Rate'}
-                              </button>
-                            )}
-                          </div>
-                        </td>
                       </tr>
                     );
                   })
@@ -502,41 +430,6 @@ export default function Logistics() {
 
         </div>
       </div>
-
-      {rateDialogShipment && (
-        <SetRateDialog
-          shipmentId={rateDialogShipment.id}
-          currentRate={rateDialogShipment.shipmentRate}
-          onClose={() => setRateDialogShipment(null)}
-          onSuccess={handleRateSuccess}
-        />
-      )}
-
-      {bookingDialogShipment && (
-        <BookWithCarrierDialog
-          shipment={bookingDialogShipment}
-          onClose={() => setBookingDialogShipment(null)}
-          onSuccess={handleRateSuccess}
-        />
-      )}
-
-      {awbDialogShipment && (
-        <SetAwbDialog
-          shipmentId={awbDialogShipment.id}
-          currentAwb={awbDialogShipment.shipmentAwbNumber}
-          onClose={() => setAwbDialogShipment(null)}
-          onSuccess={handleRateSuccess}
-        />
-      )}
-
-      {editDialogShipment && (
-        <EditShipmentDialog
-          shipment={editDialogShipment}
-          onClose={() => setEditDialogShipment(null)}
-          onSuccess={(msg) => { setToast(msg); fetchShipments(); }}
-        />
-      )}
-
     </div>
   );
 }
