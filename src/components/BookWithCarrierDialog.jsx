@@ -24,7 +24,7 @@ export default function BookWithCarrierDialog({ shipment, onClose, onSuccess }) 
     }
   };
 
-  const isForward = shipment.modes?.toLowerCase() === 'forward';
+  const isForward = shipment.modes?.toLowerCase() === 'forward' || ['Bluedart', 'DelhiveryOne', 'Delhivery'].includes(shipment.transporter);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100] p-4">
