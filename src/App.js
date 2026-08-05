@@ -18,6 +18,7 @@ import RateCalculator from './pages/RateCalculator';
 import Reports from './pages/Reports';
 import Companies from './pages/Companies';
 import Addresses from './pages/Addresses';
+import Wallet from './pages/Wallet';
 import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
@@ -90,6 +91,9 @@ function App() {
         } />
         <Route path="/addresses" element={
             <ProtectedRoute><Addresses /></ProtectedRoute>
+        } />
+        <Route path="/wallet" element={
+            <ProtectedRoute><Wallet /></ProtectedRoute>
         } />
         <Route path="/companies/:id" element={
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
