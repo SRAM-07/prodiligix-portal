@@ -341,7 +341,7 @@ export default function OrderDetail() {
                       Edit Shipment
                     </button>
 
-                    {!shipment.shipmentAwbNumber && (
+                    {!shipment.shipmentAwbNumber && ['Delhivery', 'Bluedart', 'DelhiveryOne'].includes(shipment.transporter) && (
                       <button
                         onClick={() => setShowBookingDialog(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"

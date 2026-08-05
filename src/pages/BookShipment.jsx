@@ -10,12 +10,12 @@ import api from '../services/api';
 const transportModes = ['Air', 'Air Urgent', 'Surface', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 
 const TRANSPORTERS_BY_MODE = {
-  'Air': ['Delhivery', 'Bluedart', 'Indigo', 'Air India', 'Akasa Air', 'Royal King Courier Services'],
-  'Air Urgent': ['Indigo', 'Air India', 'Akasa Air', 'Bluedart'],
-  'Surface': ['Delhivery', 'Bluedart'],
-  'Surface Urgent': ['Delhivery', 'Bluedart', 'Royal King Courier Services', 'Porter'],
-  'PTL (Part Truck Load)': ['Delhivery', 'Royal King Courier Services', 'DSN'],
-  'FTL (FullTruckLoad)': ['DSN', 'Royal King Courier Services'],
+  'Air': ['Delhivery', 'Bluedart'],
+  'Air Urgent': ['Indigo', 'Akasa Air', 'Air India', 'Bluedart'],
+  'Surface': ['Delhivery', 'Bluedart', 'ProDiligix'],
+  'Surface Urgent': ['ProDiligix'],
+  'PTL (Part Truck Load)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
+  'FTL (FullTruckLoad)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
 };
 
 const modeTypes = ['Forward', 'Reverse', 'Point to Point'];
@@ -67,7 +67,10 @@ export default function BookShipment() {
   const [rateLoading, setRateLoading] = useState(false);
   const [rateError, setRateError] = useState('');
 
-  const isUrgentMode = URGENT_OR_MANUAL_MODES.includes(form.transportMode);
+  const RATE_SUPPORTED_TRANSPORTERS = ['Delhivery', 'Bluedart'];
+  const RATE_SUPPORTED_MODES = ['Air', 'Surface'];
+  const showRate = RATE_SUPPORTED_MODES.includes(form.transportMode) && RATE_SUPPORTED_TRANSPORTERS.includes(form.transporter);
+  const isUrgentMode = !showRate;
 
   // Reset transporter when transport mode changes
   useEffect(() => {
@@ -231,9 +234,7 @@ export default function BookShipment() {
         sourceType: 'wallet',
       };
 
-      if (isUrgentMode) {
-        payload.shipmentRate = parseFloat(form.manualRate);
-      }
+
 
       const response = await api.post('/api/shipments', payload);
       const newShipmentId = response.data.id;
@@ -544,25 +545,9 @@ export default function BookShipment() {
               </div>
             </div>
 
-            {/* Final Rate */}
-            <div className="flex justify-end mb-5">
-              {isUrgentMode ? (
-                <div className="w-64">
-                  <p className="text-xs text-gray-400 mb-1">
-                    Final Rate (Manual Entry) <span className="text-red-400">*</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mb-2">
-                    No automatic pricing available for this mode — enter the agreed rate.
-                  </p>
-                  <input
-                    type="number"
-                    placeholder="Enter final rate"
-                    value={form.manualRate}
-                    onChange={e => handleChange('manualRate', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
-                  {errors.manualRate && <p className="text-xs text-red-400 mt-1">{errors.manualRate}</p>}
-                </div>
-              ) : (
+            {/* Final Rate — only shown for Air/Surface with Delhivery/Bluedart */}
+            {showRate && (
+              <div className="flex justify-end mb-5">
                 <div className="text-right">
                   <p className="text-xs text-gray-400 mb-1">Final Rate</p>
                   <div className="px-6 py-3 rounded-xl text-right min-w-[160px]"
@@ -577,8 +562,8 @@ export default function BookShipment() {
                   </div>
                   {rateError && <p className="text-xs text-orange-400 mt-1 max-w-xs text-right">{rateError}</p>}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Box Groups */}
             <div>

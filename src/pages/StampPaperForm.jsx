@@ -5,7 +5,7 @@ import { MdArrowBack } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 
-const stampDutyOptions = ['First Party', 'Second Party', 'Both'];
+const stampDutyOptions = ['First Party', 'Second Party'];
 
 export default function StampPaperForm() {
   const navigate = useNavigate();
@@ -64,6 +64,7 @@ export default function StampPaperForm() {
   const validate = () => {
     const newErrors = {};
     if (!form.firstPartyName) newErrors.firstPartyName = 'Required';
+    if (!form.considerationValue || parseFloat(form.considerationValue) <= 0) newErrors.considerationValue = 'Required';
     if (!form.secondPartyName) newErrors.secondPartyName = 'Required';
     if (!form.denomination) newErrors.denomination = 'Required';
     if (!form.description) newErrors.description = 'Required';
@@ -201,11 +202,12 @@ export default function StampPaperForm() {
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Stamp Paper Details</h3>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Consideration Value</p>
+                  <p className="text-xs text-gray-400 mb-1">Consideration Value <span className="text-red-400">*</span></p>
                   <input type="number" min="0" value={form.considerationValue}
                     onChange={e => handleChange('considerationValue', e.target.value)}
                     placeholder="Enter consideration value"
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none" />
+                  {errors.considerationValue && <p className="text-xs text-red-400 mt-1">{errors.considerationValue}</p>}
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Denomination of Stamp Paper <span className="text-red-400">*</span></p>
