@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getCurrentUser } from '../services/authService';
-import { MdBusiness, MdLocationOn, MdAccountBalanceWallet, MdPeople, MdSettings } from 'react-icons/md';
+import { MdBusiness, MdLocationOn, MdAccountBalanceWallet, MdPeople, MdSettings, MdFactory, MdReceipt } from 'react-icons/md';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   MdDashboard, 
@@ -124,7 +124,9 @@ export default function Sidebar({ onToggle }) {
           { icon: <MdLocationOn size={20}/>, label: 'Addresses', path: '/addresses' },
           { icon: <MdAccountBalanceWallet size={20}/>, label: 'Wallet', path: '/wallet' },
           { icon: <MdPeople size={20}/>, label: 'Users', path: '/users' },
-          { icon: <MdSettings size={20}/>, label: 'Map Services', path: '/map-services' }] }]
+          { icon: <MdSettings size={20}/>, label: 'Map Services', path: '/map-services' },
+          { icon: <MdFactory size={20}/>, label: 'Plants', path: '/plants' },
+          { icon: <MdReceipt size={20}/>, label: 'Purchase Orders', path: '/purchase-orders' }] }]
     : menuSections;
   const navigate = useNavigate();
   const location = useLocation();

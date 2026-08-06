@@ -21,6 +21,8 @@ import Addresses from './pages/Addresses';
 import Wallet from './pages/Wallet';
 import Users from './pages/Users';
 import MapCompanyServices from './pages/MapCompanyServices';
+import Plants from './pages/Plants';
+import PurchaseOrders from './pages/PurchaseOrders';
 import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
@@ -102,6 +104,12 @@ function App() {
         } />
         <Route path="/map-services" element={
             <ProtectedRoute><MapCompanyServices /></ProtectedRoute>
+        } />
+        <Route path="/plants" element={
+            <ProtectedRoute><Plants /></ProtectedRoute>
+        } />
+        <Route path="/purchase-orders" element={
+            <ProtectedRoute><PurchaseOrders /></ProtectedRoute>
         } />
         <Route path="/companies/:id" element={
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
