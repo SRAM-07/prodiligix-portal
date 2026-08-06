@@ -403,7 +403,7 @@ export default function OrderDetail() {
 
               {/* Action buttons */}
               <div className="flex justify-end gap-3 pb-4">
-                {shipment.deliveryStatus === 'Booked' && (
+                {shipment.deliveryStatus === 'Booked' && (!isClient || !shipment.shipmentAwbNumber) && (
                   <button
                     onClick={() => setShowCancelDialog(true)}
                     className="px-6 py-2.5 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50 transition-colors">

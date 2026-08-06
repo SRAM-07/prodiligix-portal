@@ -122,9 +122,8 @@ export default function Logistics() {
   }
 
   const columns = [
-    'Service Request ID', 'Company ID', 'Requesting Plant', 'Sending Plant', 'Receiving Plant',
-    'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
-    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate', 'Payment Status',
+    'Service Request ID', 'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
+    'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate',
     'AWB Number', 'Delivery Partner', 'Status', 'Created Date', 'Delivery Date',
     'Expected Delivery Date', 'Docs', 'Email Label'
   ];
@@ -293,10 +292,7 @@ export default function Logistics() {
                           onClick={() => navigate(`/logistics/${order.id}`)}>
                           {order.serviceRequestId}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.companyId ?? '—'}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.requestingPlantId ?? 'N/A'}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.sendingPlantId ?? 'N/A'}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.receivingPlantId ?? 'N/A'}</td>
+
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.pickupAddressId ?? 'N/A'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryAddressId ?? 'N/A'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode || '—'}</td>
@@ -310,15 +306,7 @@ export default function Logistics() {
                         <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>
                           {order.shipmentRate ? `₹${order.shipmentRate}` : '—'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-xs font-medium px-2 py-1 rounded-full"
-                            style={{
-                              color: order.requestApproved ? '#22c55e' : '#f97316',
-                              backgroundColor: order.requestApproved ? '#dcfce7' : '#ffedd5'
-                            }}>
-                            {order.requestApproved ? 'Processed' : 'Pending'}
-                          </span>
-                        </td>
+
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentAwbNumber || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transporter || '—'}</td>
                         <td className="px-4 py-3 whitespace-nowrap">

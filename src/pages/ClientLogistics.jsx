@@ -230,7 +230,7 @@ export default function ClientLogistics() {
               <tr className="border-b border-gray-100">
                 {[
                   'Service Request ID', 'Transport Mode', 'Shipment Detail',
-                  'Declared Value', 'Boxes', 'Final Rate', 'Payment Status', 'AWB Number',
+                  'Declared Value', 'Boxes', 'Final Rate', 'AWB Number',
                   'Delivery Partner', 'Status', 'Created Date', 'Actions'
                 ].map((col, i) => (
                   <th key={i} className="text-left text-xs text-gray-400 font-medium px-4 py-3 whitespace-nowrap">
@@ -267,15 +267,7 @@ export default function ClientLogistics() {
                       <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: '#068BC9' }}>
                         {order.shipmentRate ? `₹${order.shipmentRate}` : '—'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full"
-                          style={{
-                            color: order.requestApproved ? '#22c55e' : '#f97316',
-                            backgroundColor: order.requestApproved ? '#dcfce7' : '#ffedd5'
-                          }}>
-                          {order.requestApproved ? 'Processed' : 'Pending'}
-                        </span>
-                      </td>
+
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentAwbNumber || '—'}</td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transporter || '—'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
