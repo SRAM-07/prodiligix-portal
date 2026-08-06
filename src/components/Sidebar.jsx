@@ -171,7 +171,7 @@ export default function Sidebar({ onToggle }) {
       </div>
 
       {/* Menu sections */}
-      <nav className="flex-1 overflow-hidden py-2">
+      <nav className="flex-1 overflow-y-auto py-2">
         {sections.map((section, sIndex) => (
           <div key={sIndex}>
 
