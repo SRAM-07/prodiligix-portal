@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { MdSearch, MdClose, MdAdd, MdEdit, MdPerson, MdRefresh } from 'react-icons/md';
+import { MdSearch, MdClose, MdAdd, MdEdit, MdPerson, MdRefresh, MdDelete } from 'react-icons/md';
 import api from '../services/api';
 
 const ROLES = ['company_admin', 'company_user', 'company_crm_user'];
@@ -135,6 +135,17 @@ export default function Users() {
     }
   };
 
+  const handleDelete = async (user) => {
+    if (!window.confirm(`Delete ${user.firstName} ${user.lastName}? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/api/users/${user.id}`);
+      setToast('User deleted successfully');
+      fetchUsers();
+    } catch (err) {
+      setToast('Failed to delete user');
+    }
+  };
+
   const filtered = users.filter(u => {
     const name = `${u.firstName} ${u.lastName}`.toLowerCase();
     return name.includes(searchText.toLowerCase()) ||
@@ -262,6 +273,10 @@ export default function Users() {
                         <button onClick={() => openEdit(user)}
                           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                           <MdEdit size={15} className="text-gray-400" />
+                        </button>
+                        <button onClick={() => handleDelete(user)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                          <MdDelete size={15} className="text-red-400" />
                         </button>
                       </td>
                     </tr>
