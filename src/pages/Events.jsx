@@ -72,7 +72,8 @@ export default function Events() {
     </div>
   );
 
-  if (!serviceLoading && !isEnabled('events')) {
+  const isClientRole = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+  if (isClientRole && !serviceLoading && !isEnabled('events')) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
         <div className="text-center">

@@ -73,7 +73,8 @@ export default function StampPaper() {
     );
   }
 
-  if (!serviceLoading && !isEnabled('stampPaper')) {
+  const isClientRole = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+  if (isClientRole && !serviceLoading && !isEnabled('stampPaper')) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
         <div className="text-center">

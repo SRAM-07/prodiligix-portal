@@ -72,7 +72,8 @@ export default function ITSolutions() {
     </div>
   );
 
-  if (!serviceLoading && !isEnabled('itSolutions')) {
+  const isClientRole = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+  if (isClientRole && !serviceLoading && !isEnabled('itSolutions')) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
         <div className="text-center">

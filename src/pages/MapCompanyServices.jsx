@@ -3,14 +3,6 @@ import Sidebar from '../components/Sidebar';
 import { MdRefresh, MdCheck, MdClose } from 'react-icons/md';
 import api from '../services/api';
 
-const serviceIcons = {
-  'Logistic Management Services': '🚚',
-  'Stamp Paper Procurement Management': '📄',
-  'Book Corporate Gifting': '🎁',
-  'Event & Team Outing Management': '🎉',
-  'IT Solutions': '💻',
-};
-
 export default function MapCompanyServices() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [companies, setCompanies] = useState([]);
@@ -145,9 +137,11 @@ export default function MapCompanyServices() {
                       style={{ borderColor: mapped ? '#068BC9' : '#e5e7eb' }}
                       onClick={() => handleToggle(service.id)}>
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                           style={{ backgroundColor: mapped ? '#e0f2fe' : '#f3f4f6' }}>
-                          {serviceIcons[service.name] || '⚙️'}
+                          <span className="text-xs font-bold" style={{ color: mapped ? '#068BC9' : '#9ca3af' }}>
+                            {service.name.charAt(0)}
+                          </span>
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-800">{service.name}</p>
