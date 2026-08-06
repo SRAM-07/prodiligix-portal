@@ -1,3 +1,4 @@
+import { useCompanyServices } from '../hooks/useCompanyServices';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartSidebar from '../components/SmartSidebar';
@@ -18,8 +19,19 @@ const statusConfig = {
   'Cancelled': { color: '#ef4444', bg: '#fee2e2' },
 };
 
+const SERVICE_NOT_AVAILABLE = () => (
+  <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+    <div className="text-center">
+      <p className="text-4xl mb-4">🔒</p>
+      <h2 className="text-lg font-bold text-gray-800 mb-2">Service Not Available</h2>
+      <p className="text-sm text-gray-400">This service is not enabled for your company. Please contact ProDiligix support.</p>
+    </div>
+  </div>
+);
+
 export default function StampPaper() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const { isEnabled, loading: serviceLoading } = useCompanyServices();
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [statusFilter, setStatusFilter] = useState('');
@@ -61,6 +73,17 @@ export default function StampPaper() {
     );
   }
 
+  if (!serviceLoading && !isEnabled('stampPaper')) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div className="text-center">
+          <p className="text-4xl mb-4">🔒</p>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Service Not Available</h2>
+          <p className="text-sm text-gray-400">This service is not enabled for your company. Please contact ProDiligix support.</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SmartSidebar onToggle={setSidebarExpanded} />

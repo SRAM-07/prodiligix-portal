@@ -1,3 +1,4 @@
+import { useCompanyServices } from '../hooks/useCompanyServices';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ClientLayout from '../components/ClientLayout';
@@ -30,8 +31,19 @@ const statusConfig = {
   'RTO': { color: '#f97316', bg: '#ffedd5' },
 };
 
+const SERVICE_NOT_AVAILABLE = () => (
+  <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+    <div className="text-center">
+      <p className="text-4xl mb-4">🔒</p>
+      <h2 className="text-lg font-bold text-gray-800 mb-2">Service Not Available</h2>
+      <p className="text-sm text-gray-400">This service is not enabled for your company. Please contact ProDiligix support.</p>
+    </div>
+  </div>
+);
+
 export default function ClientLogistics() {
   const [showFilter, setShowFilter] = useState(false);
+  const { isEnabled, loading: serviceLoading } = useCompanyServices();
   const [activeFilter, setActiveFilter] = useState('Sort: Newest First');
   const [statusFilter, setStatusFilter] = useState(null);
   const [sortOrder, setSortOrder] = useState('newest');

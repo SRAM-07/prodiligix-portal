@@ -48,9 +48,7 @@ const serviceMenus = {
 function getMenuForPath(pathname) {
   if (pathname === '/client-dashboard') return serviceMenus.dashboard;
   if (pathname.includes('/client/logistics') || pathname.includes('/client/bulk-upload')) return serviceMenus.logistics;
-  if (pathname.includes('/client/reports')) {
-    return serviceMenus.logistics;
-  }
+  if (pathname.includes('/client/reports')) return serviceMenus.logistics;
   if (pathname.includes('/stamp-paper')) return serviceMenus.stampPaper;
   if (pathname.includes('/gifting')) return serviceMenus.gifting;
   if (pathname.includes('/events')) return serviceMenus.events;
@@ -84,7 +82,6 @@ export default function ClientSidebar({ expanded, setExpanded }) {
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}>
 
-      {/* Company info */}
       <div className="px-4 py-4 border-b border-white border-opacity-10 flex items-center gap-3">
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
@@ -98,7 +95,6 @@ export default function ClientSidebar({ expanded, setExpanded }) {
         )}
       </div>
 
-      {/* Dynamic Nav */}
       <nav className="flex-1 py-4 flex flex-col gap-1 px-2 overflow-y-auto">
         {menuItems.map((item, i) => (
           <React.Fragment key={i}>
@@ -121,7 +117,6 @@ export default function ClientSidebar({ expanded, setExpanded }) {
         ))}
       </nav>
 
-      {/* Bottom */}
       <div className="px-2 pb-4 border-t border-white border-opacity-10 pt-4">
         {expanded && (
           <div className="px-3 mb-3">
@@ -129,7 +124,7 @@ export default function ClientSidebar({ expanded, setExpanded }) {
               {user?.firstName} {user?.lastName}
             </p>
             <p className="text-gray-400 text-xs capitalize">
-              {user?.role?.replace(/_/g, ' ')}
+              {user?.role?.replace(/\_/g, ' ')}
             </p>
           </div>
         )}

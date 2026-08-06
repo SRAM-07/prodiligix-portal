@@ -20,6 +20,7 @@ import Companies from './pages/Companies';
 import Addresses from './pages/Addresses';
 import Wallet from './pages/Wallet';
 import Users from './pages/Users';
+import MapCompanyServices from './pages/MapCompanyServices';
 import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
@@ -98,6 +99,9 @@ function App() {
         } />
         <Route path="/users" element={
             <ProtectedRoute><Users /></ProtectedRoute>
+        } />
+        <Route path="/map-services" element={
+            <ProtectedRoute><MapCompanyServices /></ProtectedRoute>
         } />
         <Route path="/companies/:id" element={
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
