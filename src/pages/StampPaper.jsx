@@ -5,7 +5,7 @@ import { MdFilterList, MdRefresh, MdSearch, MdClose, MdVisibility, MdDownload, M
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 
-const filterOptions = ['Latest', 'Since Date', 'Date Range', 'Status', 'Company', 'Reset / Show All'];
+const filterOptions = ['Pending', 'In Printing', 'In Transit', 'Delivered', 'Cancelled', 'Reset / Show All'];
 
 const ADMIN_ROLES = ['super_admin', 'crm_user'];
 
@@ -22,6 +22,7 @@ export default function StampPaper() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
+  const [statusFilter, setStatusFilter] = useState('');
   const [searchText, setSearchText] = useState('');
   const [stampData, setStampData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +45,13 @@ export default function StampPaper() {
     fetchStampPapers();
   }, []);
 
-  const filtered = stampData.filter(o =>
-    (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-    (o.firstPartyName || '').toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filtered = [...stampData]
+    .filter(o =>
+      ((o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (o.firstPartyName || '').toLowerCase().includes(searchText.toLowerCase())) &&
+      (!statusFilter || o.status === statusFilter)
+    )
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   if (loading) {
     return (
@@ -120,7 +124,17 @@ export default function StampPaper() {
                   {filterOptions.map((opt, i) => (
                     <div
                       key={i}
-                      onClick={() => { setActiveFilter(opt); setShowFilter(false); }}
+                      onClick={() => {
+                        setActiveFilter(opt);
+                        setShowFilter(false);
+                        if (opt === 'Reset / Show All') {
+                          setStatusFilter('');
+                        } else if (['Pending', 'In Printing', 'In Transit', 'Delivered', 'Cancelled'].includes(opt)) {
+                          setStatusFilter(opt);
+                        } else {
+                          setStatusFilter('');
+                        }
+                      }}
                       className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm"
                       style={{ color: opt === 'Reset / Show All' ? '#ef4444' : '#374151' }}>
                       {opt}
