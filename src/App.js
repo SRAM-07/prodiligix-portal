@@ -19,6 +19,7 @@ import Reports from './pages/Reports';
 import Companies from './pages/Companies';
 import Addresses from './pages/Addresses';
 import Wallet from './pages/Wallet';
+import Users from './pages/Users';
 import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
@@ -94,6 +95,9 @@ function App() {
         } />
         <Route path="/wallet" element={
             <ProtectedRoute><Wallet /></ProtectedRoute>
+        } />
+        <Route path="/users" element={
+            <ProtectedRoute><Users /></ProtectedRoute>
         } />
         <Route path="/companies/:id" element={
           <ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES}>
