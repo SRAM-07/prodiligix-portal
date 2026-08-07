@@ -69,8 +69,27 @@ export default function BulkUpload() {
       const shipmentDtos = [];
       const rowErrors = [];
 
+      const validateRow = (row) => {
+        const errors = [];
+        if (!row.pickup_name?.trim()) errors.push('Pickup name is required');
+        if (!row.pickup_phone || !/^\d{10}$/.test(row.pickup_phone.toString().trim())) errors.push('Pickup phone must be 10 digits');
+        if (!row.pickup_pincode || !/^\d{6}$/.test(row.pickup_pincode.toString().trim())) errors.push('Pickup pincode must be 6 digits');
+        if (!row.delivery_name?.trim()) errors.push('Delivery name is required');
+        if (!row.delivery_phone || !/^\d{10}$/.test(row.delivery_phone.toString().trim())) errors.push('Delivery phone must be 10 digits');
+        if (!row.delivery_pincode || !/^\d{6}$/.test(row.delivery_pincode.toString().trim())) errors.push('Delivery pincode must be 6 digits');
+        if (!row.shipment_detail?.trim()) errors.push('Shipment detail is required');
+        if (!row.declared_value || parseFloat(row.declared_value) <= 0) errors.push('Declared value must be greater than 0');
+        if (!row.actual_weight || parseFloat(row.actual_weight) <= 0) errors.push('Actual weight must be greater than 0');
+        return errors;
+      };
+
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
+        const validationErrors = validateRow(row);
+        if (validationErrors.length > 0) {
+          rowErrors.push(`Row ${i + 2}: ${validationErrors.join('; ')}`);
+          continue;
+        }
         try {
           const pickupRes = await api.post('/api/addresses', {
             companyId,
@@ -143,9 +162,9 @@ export default function BulkUpload() {
       const bulkRes = await api.post('/api/shipments/bulk', shipmentDtos);
       setResult({
         success: true,
-        total: bulkRes.data.total,
+        total: rows.length,
         successCount: bulkRes.data.successCount,
-        failureCount: bulkRes.data.failureCount,
+        failureCount: bulkRes.data.failureCount + rowErrors.length,
         results: bulkRes.data.results,
         rowErrors,
       });
@@ -253,8 +272,18 @@ Rapido Bangalore,Spatium Commercio Tower A,Bangalore,Karnataka,560103,7406633660
                   </p>
                   {result.failureCount > 0 && (
                     <p className="text-xs mt-1" style={{ color: '#c2410c' }}>
-                      {result.failureCount} row(s) failed — check details below.
+                      {result.failureCount} row(s) failed. Check details below.
                     </p>
+                  )}
+                  {result.rowErrors?.length > 0 && (
+                    <div className="mt-2 flex flex-col gap-1">
+                      {result.rowErrors.map((err, i) => (
+                        <div key={i} className="text-xs flex items-center gap-2">
+                          <MdError size={14} style={{ color: '#ef4444' }} />
+                          <span className="text-red-500">{err}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                   <div className="mt-3 flex flex-col gap-1">
                     {result.results?.map((r, i) => (
@@ -265,7 +294,7 @@ Rapido Bangalore,Spatium Commercio Tower A,Bangalore,Karnataka,560103,7406633660
                           <MdError size={14} style={{ color: '#ef4444' }} />
                         )}
                         <span className={r.success ? 'text-gray-600' : 'text-red-500'}>
-                          {r.success ? r.serviceRequestId : r.error}
+                          {r.success ? r.serviceRequestId : `Row ${r.row || i + 2}: ${r.error}`}
                         </span>
                       </div>
                     ))}
