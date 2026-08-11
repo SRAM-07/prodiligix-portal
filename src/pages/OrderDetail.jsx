@@ -437,10 +437,16 @@ export default function OrderDetail() {
                       <MdDownload size={20} style={{ color: '#068BC9' }}/>
                     </a>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
+                    <label className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
                       <MdUpload size={28} className="text-gray-300"/>
-                      <p className="text-sm text-gray-500 font-medium">No Invoice / DC Copy</p>
-                    </div>
+                      <p className="text-sm text-gray-500 font-medium">Upload Invoice / DC Copy</p>
+                      <p className="text-xs text-gray-400">Click to browse</p>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={async (e) => {
+                        const file = e.target.files[0]; if (!file) return;
+                        const fd = new FormData(); fd.append('file', file);
+                        try { await api.post(`/api/shipments/${shipment.id}/upload-invoice`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); setToast('Invoice uploaded'); fetchAll(); } catch { setToast('Upload failed'); }
+                      }} />
+                    </label>
                   )}
 
                   {shipment.shipmentWithLabel ? (
@@ -458,6 +464,29 @@ export default function OrderDetail() {
                     <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
                       <p className="text-sm text-gray-400">No label uploaded yet</p>
                     </div>
+                  )}
+
+                  {shipment.shipmentAwbNumber && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await api.get(`/api/shipments/${shipment.id}/invoice`, { responseType: 'blob' });
+                          const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `invoice-${shipment.serviceRequestId}.pdf`;
+                          a.click();
+                        } catch (e) { alert('Failed to generate invoice'); }
+                      }}
+                      className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors w-full">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#fef3c7' }}>
+                          <MdAttachFile size={20} style={{ color: '#d97706' }}/>
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">Download Invoice</p>
+                      </div>
+                      <MdDownload size={20} style={{ color: '#d97706' }}/>
+                    </button>
                   )}
 
                   {shipment.manifest ? (
@@ -489,10 +518,16 @@ export default function OrderDetail() {
                       <MdDownload size={20} style={{ color: '#068BC9' }}/>
                     </a>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
+                    <label className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
                       <MdUpload size={28} className="text-gray-300"/>
-                      <p className="text-sm text-gray-500 font-medium">No POD yet</p>
-                    </div>
+                      <p className="text-sm text-gray-500 font-medium">Upload POD</p>
+                      <p className="text-xs text-gray-400">Click to browse</p>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={async (e) => {
+                        const file = e.target.files[0]; if (!file) return;
+                        const fd = new FormData(); fd.append('file', file);
+                        try { await api.post(`/api/shipments/${shipment.id}/upload-pod`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); setToast('POD uploaded'); fetchAll(); } catch { setToast('Upload failed'); }
+                      }} />
+                    </label>
                   )}
                 </div>
               </div>

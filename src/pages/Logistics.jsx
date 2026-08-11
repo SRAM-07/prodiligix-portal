@@ -16,8 +16,10 @@ function getStatusIdColor(row) {
   if (status.includes('rto')) return '#f97316';
   if (status.includes('in transit')) return '#1d4ed8';
   if (status.includes('picked up')) return '#0ea5e9';
+  if (status.includes('booked') && !row.shipmentAwbNumber) return '#f59e0b'; // Booked but no AWB yet — amber
+  if (status.includes('booked')) return '#068BC9'; // Booked with AWB — brand blue
   if (row.requestApproved) return '#0d9488';
-  return '#068BC9';
+  return '#6b7280'; // Not yet processed — gray
 }
 
 const statusConfig = {
