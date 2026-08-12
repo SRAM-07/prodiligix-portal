@@ -46,9 +46,21 @@ export default function Logistics() {
   const [logisticsData, setLogisticsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingEmailId, setSendingEmailId] = useState(null);
+  const [sinceDate, setSinceDate] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [companyFilter, setCompanyFilter] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [showCompanyOptions, setShowCompanyOptions] = useState(false);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
 
+  const fetchCompanies = async () => {
+    try {
+      const res = await api.get('/api/companies');
+      setCompanies(res.data);
+    } catch (e) { console.error('Failed to fetch companies', e); }
+  };
   const fetchShipments = async () => {
     try {
       const response = await api.get('/api/shipments');
@@ -62,6 +74,7 @@ export default function Logistics() {
 
   useEffect(() => {
     fetchShipments();
+    fetchCompanies();
   }, []);
 
   useEffect(() => {
@@ -76,7 +89,12 @@ export default function Logistics() {
       (o.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
       (o.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase());
     const matchesStatus = !statusFilter || o.deliveryStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+    const createdAt = o.createdAt ? new Date(o.createdAt) : null;
+    const matchesSince = !sinceDate || (createdAt && createdAt >= new Date(sinceDate));
+    const matchesDateFrom = !dateFrom || (createdAt && createdAt >= new Date(dateFrom));
+    const matchesDateTo = !dateTo || (createdAt && createdAt <= new Date(dateTo + 'T23:59:59'));
+    const matchesCompany = !companyFilter || o.companyId === companyFilter;
+    return matchesSearch && matchesStatus && matchesSince && matchesDateFrom && matchesDateTo && matchesCompany;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -90,7 +108,7 @@ export default function Logistics() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, statusFilter, sortOrder]);
+  }, [searchText, statusFilter, sortOrder, sinceDate, dateFrom, dateTo, companyFilter]);
 
   const getAvailableDocs = (row) => {
     const docs = [];
@@ -206,9 +224,18 @@ export default function Logistics() {
                           setActiveFilter('Sort: Newest First');
                           setStatusFilter(null);
                           setSortOrder('newest');
+                          setSinceDate('');
+                          setDateFrom('');
+                          setDateTo('');
+                          setCompanyFilter(null);
+                          setShowCompanyOptions(false);
                           setShowFilter(false);
                         } else if (opt === 'Status') {
                           setShowStatusOptions(true);
+                          setShowCompanyOptions(false);
+                        } else if (opt === 'Company') {
+                          setShowCompanyOptions(true);
+                          setShowStatusOptions(false);
                         } else if (opt === 'Sort: Newest First') {
                           setSortOrder('newest');
                           setActiveFilter(opt);
@@ -228,6 +255,22 @@ export default function Logistics() {
                       {opt === 'Status' && <span className="text-gray-300">›</span>}
                     </div>
                   ))}
+                  {showCompanyOptions && (
+                    <div className="border-t border-gray-100 mt-1 pt-1 max-h-48 overflow-y-auto">
+                      {companies.map((c, i) => (
+                        <div key={i}
+                          onClick={() => {
+                            setCompanyFilter(c.id);
+                            setActiveFilter(`Company: ${c.businessName}`);
+                            setShowFilter(false);
+                            setShowCompanyOptions(false);
+                          }}
+                          className="px-6 py-2 cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                          {c.businessName}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {showStatusOptions && (
                     <div className="border-t border-gray-100 mt-1 pt-1">
                       {['Booked', 'Picked Up', 'In Transit', 'Delivered', 'Exception', 'Cancelled', 'RTO'].map((status, i) => (
@@ -249,11 +292,30 @@ export default function Logistics() {
               )}
             </div>
 
+            {/* Since Date */}
+            {activeFilter === 'Since Date' && (
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
+                <span className="text-xs text-gray-500">Since:</span>
+                <input type="date" value={sinceDate} onChange={e => setSinceDate(e.target.value)}
+                  className="text-xs text-gray-700 outline-none" />
+              </div>
+            )}
+            {/* Date Range */}
+            {activeFilter === 'Date Range' && (
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
+                <span className="text-xs text-gray-500">From:</span>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                  className="text-xs text-gray-700 outline-none" />
+                <span className="text-xs text-gray-500">To:</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                  className="text-xs text-gray-700 outline-none" />
+              </div>
+            )}
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
               <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
                 {activeFilter}: {sorted.length}
               </span>
-              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Sort: Newest First'); setStatusFilter(null); setSortOrder('newest'); }} />
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Sort: Newest First'); setStatusFilter(null); setSortOrder('newest'); setSinceDate(''); setDateFrom(''); setDateTo(''); setCompanyFilter(null); setShowCompanyOptions(false); }} />
             </div>
 
             <span className="text-sm text-gray-500">({sorted.length})</span>

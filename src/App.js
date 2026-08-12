@@ -27,6 +27,11 @@ import NewCompany from './pages/NewCompany';
 import CompanyDetail from './pages/CompanyDetail';
 import ClientDashboard from './pages/ClientDashboard';
 import ClientLogistics from './pages/ClientLogistics';
+import ClientLogisticsDashboard from './pages/ClientLogisticsDashboard';
+import ClientStampPaperDashboard from './pages/ClientStampPaperDashboard';
+import ClientGiftingDashboard from './pages/ClientGiftingDashboard';
+import ClientEventsDashboard from './pages/ClientEventsDashboard';
+import ClientITDashboard from './pages/ClientITDashboard';
 import BookShipment from './pages/BookShipment';
 import BulkUpload from './pages/BulkUpload';
 import KnowledgeBase from './pages/KnowledgeBase';
@@ -118,6 +123,11 @@ function App() {
         } />
         <Route path="/stamp-paper" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <ClientStampPaperDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/stamp-paper/list" element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
             <StampPaper />
           </ProtectedRoute>
         } />
@@ -132,6 +142,11 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/gifting" element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <ClientGiftingDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/gifting/list" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
             <CorporateGifting />
           </ProtectedRoute>
@@ -148,6 +163,11 @@ function App() {
         } />
         <Route path="/events" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <ClientEventsDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/events/list" element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
             <Events />
           </ProtectedRoute>
         } />
@@ -162,6 +182,11 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/it-solutions" element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <ClientITDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/it-solutions/list" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
             <ITSolutions />
           </ProtectedRoute>
@@ -179,6 +204,9 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/client/logistics" element={
+            <ClientLogisticsDashboard />
+          } />
+        <Route path="/client/logistics/list" element={
           <ProtectedRoute allowedRoles={CLIENT_ROLES}>
             <ClientLogistics />
           </ProtectedRoute>
