@@ -32,6 +32,7 @@ export default function OrderDetail() {
   const { id } = useParams();
   const user = getCurrentUser();
   const isClient = ['company_user', 'company_admin', 'company_crm_user'].includes(user?.role);
+  const isAdmin = ['super_admin', 'admin', 'crm_user'].includes(user?.role);
   const listPath = isClient ? '/client/logistics' : '/logistics';
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
@@ -45,6 +46,8 @@ export default function OrderDetail() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showRateDialog, setShowRateDialog] = useState(false);
+  const [editingSrId, setEditingSrId] = useState(false);
+  const [newSrId, setNewSrId] = useState('');
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showAwbDialog, setShowAwbDialog] = useState(false);
 
@@ -161,7 +164,34 @@ export default function OrderDetail() {
           </button>
           <div className="flex-1">
             <p className="text-gray-400 text-xs">Logistics Management</p>
-            <h1 className="text-base font-bold text-gray-800">{shipment.serviceRequestId}</h1>
+            <div className="flex items-center gap-2">
+              {editingSrId ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newSrId}
+                    onChange={e => setNewSrId(e.target.value)}
+                    className="text-sm font-bold text-gray-800 border border-gray-300 rounded px-2 py-1 outline-none"
+                    style={{ width: '180px' }}
+                  />
+                  <button onClick={async () => {
+                    try {
+                      await api.patch(`/api/shipments/${shipment.id}/sr-id`, { serviceRequestId: newSrId });
+                      setToast('SR ID updated');
+                      fetchAll();
+                      setEditingSrId(false);
+                    } catch { setToast('Failed to update SR ID'); }
+                  }} className="text-xs px-2 py-1 rounded text-white" style={{ backgroundColor: '#068BC9' }}>Save</button>
+                  <button onClick={() => setEditingSrId(false)} className="text-xs px-2 py-1 rounded text-gray-500 border border-gray-200">Cancel</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-gray-800">{shipment.serviceRequestId}</h1>
+                  {isAdmin && <button onClick={() => { setNewSrId(shipment.serviceRequestId); setEditingSrId(true); }}
+                    className="text-xs text-gray-400 hover:text-gray-600"><MdEdit size={14}/></button>}
+                </div>
+              )}
+            </div>
           </div>
           <span className="text-xs font-medium px-3 py-1.5 rounded-full"
             style={{ color: s.color, backgroundColor: s.bg }}>
