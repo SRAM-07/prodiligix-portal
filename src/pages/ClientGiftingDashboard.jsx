@@ -11,28 +11,34 @@ export default function ClientGiftingDashboard() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const res = await api.get('/api/gifting');
-      setOrders(res.data || []);
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      const [dataRes, walletRes] = await Promise.all([
+        api.get('/api/corporate-giftings'),
+        u?.companyId ? api.get(`/api/wallet/${u.companyId}`).catch(() => null) : Promise.resolve(null)
+      ]);
+      setOrders(dataRes.data || []);
+      if (walletRes) setWallet(walletRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(s => s.status === 'Pending').length,
-    initialized: orders.filter(s => s.status === 'Initialized').length,
-    accepted: orders.filter(s => s.status === 'Accepted').length,
-    rejected: orders.filter(s => s.status === 'Rejected').length,
+    pending: orders.filter(s => s.quotationStatus === 'pending').length,
+    initialized: orders.filter(s => s.quotationStatus === 'initialized').length,
+    accepted: orders.filter(s => s.quotationStatus === 'accepted').length,
+    rejected: orders.filter(s => s.quotationStatus === 'rejected').length,
   };
 
   const recent = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
-  const statusColor = s => ({ 'Pending': '#f59e0b', 'Initialized': '#068BC9', 'Accepted': '#22c55e', 'Rejected': '#ef4444' }[s] || '#9ca3af');
-  const statusBg = s => ({ 'Pending': '#fef3c7', 'Initialized': '#e0f2fe', 'Accepted': '#dcfce7', 'Rejected': '#fee2e2' }[s] || '#f3f4f6');
+  const statusColor = s => ({ 'Pending': '#f59e0b', 'Initialized': '#068BC9', 'Accepted': '#22c55e', 'Rejected': '#ef4444' }[s?.quotationStatus] || '#9ca3af');
+  const statusBg = s => ({ 'Pending': '#fef3c7', 'Initialized': '#e0f2fe', 'Accepted': '#dcfce7', 'Rejected': '#fee2e2' }[s?.quotationStatus] || '#f3f4f6');
 
   return (
     <ClientLayout>
@@ -67,7 +73,33 @@ export default function ClientGiftingDashboard() {
           ))}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span style={{ color: '#068BC9' }}>💳</span>
+              <p className="text-sm font-semibold text-gray-700">Wallet</p>
+            </div>
+            {wallet ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-400">Available Balance</p>
+                  <p className="text-2xl font-bold" style={{ color: '#068BC9' }}>
+                    ₹{(parseFloat(wallet.totalRechargedAmount || 0) - parseFloat(wallet.walletUsedAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Recharged</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.totalRechargedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Used</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.walletUsedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="h-2 rounded-full" style={{ backgroundColor: '#068BC9', width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Wallet info unavailable</p>
+            )}
+          </div>
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <p className="text-sm font-semibold text-gray-700 mb-2">Status Overview</p>
           <div className="flex items-center justify-between">
             <ResponsiveContainer width="55%" height={180}>
@@ -99,6 +131,7 @@ export default function ClientGiftingDashboard() {
               ))}
             </div>
           </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -120,7 +153,7 @@ export default function ClientGiftingDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: statusColor(s.status), backgroundColor: statusBg(s.status) }}>
-                    {s.status}
+                    {s.quotationStatus}
                   </span>
                   <p className="text-xs text-gray-400">{s.createdAt?.split('T')[0]}</p>
                 </div>

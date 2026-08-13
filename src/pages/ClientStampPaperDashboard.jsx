@@ -11,24 +11,34 @@ export default function ClientStampPaperDashboard() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const res = await api.get('/api/stamp-paper');
-      setOrders(res.data || []);
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      const [stampsRes, walletRes] = await Promise.all([
+        api.get('/api/stamp-paper'),
+        u?.companyId ? api.get(`/api/wallet/${u.companyId}`).catch(() => null) : Promise.resolve(null)
+      ]);
+      setOrders(stampsRes.data || []);
+      if (walletRes) setWallet(walletRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(s => s.deliveryStatus === 'Pending').length,
-    inTransit: orders.filter(s => s.deliveryStatus === 'In Transit').length,
-    delivered: orders.filter(s => s.deliveryStatus === 'Delivered').length,
-    cancelled: orders.filter(s => s.deliveryStatus === 'Cancelled').length,
+    pending: orders.filter(s => s.status === 'Pending').length,
+    inTransit: orders.filter(s => s.status === 'In Transit').length,
+    delivered: orders.filter(s => s.status === 'Delivered').length,
+    cancelled: orders.filter(s => s.status === 'Cancelled').length,
   };
+
+  const stampSpend = orders
+    .filter(s => s.lastDeductedAmount && s.status !== 'Cancelled')
+    .reduce((sum, s) => sum + (parseFloat(s.lastDeductedAmount) || 0), 0);
 
   const recent = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
   const statusColor = s => ({ 'Pending': '#f59e0b', 'In Transit': '#068BC9', 'Delivered': '#22c55e', 'Cancelled': '#ef4444' }[s] || '#9ca3af');
@@ -49,11 +59,12 @@ export default function ClientStampPaperDashboard() {
       </div>
 
       <div className="p-6 space-y-6">
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: 'Total', value: stats.total, color: '#068BC9', bg: '#e0f2fe', icon: <MdDescription size={18}/> },
+            { label: 'Total', value: stats.total, color: BRAND, bg: '#e0f2fe', icon: <MdDescription size={18}/> },
             { label: 'Pending', value: stats.pending, color: '#f59e0b', bg: '#fef3c7', icon: <MdPending size={18}/> },
-            { label: 'In Transit', value: stats.inTransit, color: '#068BC9', bg: '#e0f2fe', icon: <MdLocalShipping size={18}/> },
+            { label: 'In Transit', value: stats.inTransit, color: BRAND, bg: '#e0f2fe', icon: <MdLocalShipping size={18}/> },
             { label: 'Delivered', value: stats.delivered, color: '#22c55e', bg: '#dcfce7', icon: <MdCheckCircle size={18}/> },
             { label: 'Cancelled', value: stats.cancelled, color: '#ef4444', bg: '#fee2e2', icon: <MdCancel size={18}/> },
           ].map((card, i) => (
@@ -67,42 +78,84 @@ export default function ClientStampPaperDashboard() {
           ))}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold text-gray-700">Status Overview</p>
-          </div>
-          <div className="flex items-center justify-between">
-            <ResponsiveContainer width="55%" height={180}>
-              <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="90%" barSize={8}
-                data={[
-                  { name: 'Pending', value: stats.pending, fill: '#f59e0b' },
-                  { name: 'In Transit', value: stats.inTransit, fill: '#068BC9' },
-                  { name: 'Delivered', value: stats.delivered, fill: '#22c55e' },
-                  { name: 'Cancelled', value: stats.cancelled, fill: '#ef4444' },
-                ].reverse()} startAngle={90} endAngle={-270}>
-                <RadialBar minAngle={5} background={{ fill: '#f3f4f6' }} clockWise dataKey="value" />
-                <Tooltip formatter={(v, n, p) => [v, p.payload.name]} contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} />
-              </RadialBarChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col gap-2 w-[45%]">
-              {[
-                { name: 'Pending', value: stats.pending, color: '#f59e0b' },
-                { name: 'In Transit', value: stats.inTransit, color: '#068BC9' },
-                { name: 'Delivered', value: stats.delivered, color: '#22c55e' },
-                { name: 'Cancelled', value: stats.cancelled, color: '#ef4444' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-gray-500">{item.name}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-700">{item.value}</span>
+        {/* Wallet + Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <MdAccountBalanceWallet size={18} style={{ color: BRAND }} />
+              <p className="text-sm font-semibold text-gray-700">Wallet</p>
+            </div>
+            {wallet ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-400">Available Balance</p>
+                  <p className="text-2xl font-bold" style={{ color: BRAND }}>
+                    ₹{(parseFloat(wallet.totalRechargedAmount || 0) - parseFloat(wallet.walletUsedAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-              ))}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Total Recharged</span>
+                    <span className="font-medium text-gray-700">₹{parseFloat(wallet.totalRechargedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Total Used</span>
+                    <span className="font-medium text-gray-700">₹{parseFloat(wallet.walletUsedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Stamp Paper Spend</span>
+                    <span className="font-medium" style={{ color: BRAND }}>₹{stampSpend.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="h-2 rounded-full" style={{ backgroundColor: BRAND, width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Wallet info unavailable</p>
+            )}
+          </div>
+
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Status Overview</p>
+            <div className="flex items-center justify-between">
+              {Object.values(stats).slice(1).every(v => v === 0) ? (
+                <div className="flex items-center justify-center h-[180px] text-sm text-gray-400">No data yet</div>
+              ) : (
+              <ResponsiveContainer width="55%" height={180}>
+                <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="90%" barSize={8}
+                  data={[
+                    { name: 'Pending', value: stats.pending, fill: '#f59e0b' },
+                    { name: 'In Transit', value: stats.inTransit, fill: BRAND },
+                    { name: 'Delivered', value: stats.delivered, fill: '#22c55e' },
+                    { name: 'Cancelled', value: stats.cancelled, fill: '#ef4444' },
+                  ].reverse()} startAngle={90} endAngle={-270}>
+                  <RadialBar minAngle={5} background={{ fill: '#f3f4f6' }} clockWise dataKey="value" />
+                  <Tooltip formatter={(v, n, p) => [v, p.payload.name]} contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              )}
+              <div className="flex flex-col gap-2 w-[45%]">
+                {[
+                  { name: 'Pending', value: stats.pending, color: '#f59e0b' },
+                  { name: 'In Transit', value: stats.inTransit, color: BRAND },
+                  { name: 'Delivered', value: stats.delivered, color: '#22c55e' },
+                  { name: 'Cancelled', value: stats.cancelled, color: '#ef4444' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-xs text-gray-500">{item.name}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700">{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Recent */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-gray-700">Recent Requests</p>
@@ -122,7 +175,7 @@ export default function ClientStampPaperDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: statusColor(s.deliveryStatus), backgroundColor: statusBg(s.deliveryStatus) }}>
-                    {s.deliveryStatus}
+                    {s.status}
                   </span>
                   <p className="text-xs text-gray-400">{s.createdAt?.split('T')[0]}</p>
                 </div>

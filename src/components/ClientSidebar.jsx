@@ -48,7 +48,15 @@ const serviceMenus = {
 function getMenuForPath(pathname) {
   if (pathname === '/client-dashboard') return serviceMenus.dashboard;
   if (pathname.includes('/client/logistics') || pathname.includes('/client/bulk-upload')) return serviceMenus.logistics;
-  if (pathname.includes('/client/reports')) return serviceMenus.logistics;
+  if (pathname.includes('/client/reports')) {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'stamp') return serviceMenus.stampPaper;
+    if (tab === 'gifting') return serviceMenus.gifting;
+    if (tab === 'events') return serviceMenus.events;
+    if (tab === 'it') return serviceMenus.itSolutions;
+    return serviceMenus.logistics;
+  }
   if (pathname.includes('/stamp-paper')) return serviceMenus.stampPaper;
   if (pathname.includes('/gifting')) return serviceMenus.gifting;
   if (pathname.includes('/events')) return serviceMenus.events;
