@@ -45,6 +45,9 @@ export default function GiftingDetail() {
   const [toast, setToast] = useState('');
   const [feedback, setFeedback] = useState('');
   const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackProductQuality, setFeedbackProductQuality] = useState('');
+  const [feedbackDelivery, setFeedbackDelivery] = useState('');
+  const [feedbackRecommend, setFeedbackRecommend] = useState('');
   const [dispatchDetails, setDispatchDetails] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [rejectReason, setRejectReason] = useState('');
@@ -105,7 +108,7 @@ export default function GiftingDetail() {
 
   const submitFeedback = async () => {
     try {
-      await api.post(`/api/corporate-giftings/${id}/feedback`, { feedback, feedbackRating });
+      await api.post(`/api/corporate-giftings/${id}/feedback`, { feedback, feedbackRating, productQuality: feedbackProductQuality, delivery: feedbackDelivery, recommend: feedbackRecommend });
       setToast('Feedback submitted!');
       fetchDetail();
     } catch { setToast('Failed to submit feedback'); }
@@ -386,34 +389,75 @@ export default function GiftingDetail() {
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
               <p className="text-sm font-semibold text-gray-700 mb-4">Feedback</p>
               {detail.feedback ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-1">
-                    {[1,2,3,4,5].map(star => (
-                      <span key={star} style={{ color: star <= (detail.feedbackRating || 0) ? '#f59e0b' : '#d1d5db' }}>
-                        {star <= (detail.feedbackRating || 0) ? <MdStar size={24} /> : <MdStarBorder size={24} />}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-700">{detail.feedback}</p>
-                </div>
-              ) : isCompanyUser ? (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">Rating</p>
+                    <p className="text-xs text-gray-400 mb-1">Overall Experience</p>
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(star => (
+                        <span key={star} style={{ color: star <= (detail.feedbackRating || 0) ? '#f59e0b' : '#d1d5db' }}>
+                          {star <= (detail.feedbackRating || 0) ? <MdStar size={22} /> : <MdStarBorder size={22} />}
+                        </span>
+                      ))}
+                      <span className="text-sm text-gray-500 ml-1">{detail.feedbackRating}/5</span>
+                    </div>
+                  </div>
+                  {detail.feedbackProductQuality && <div><p className="text-xs text-gray-400">Product Quality</p><p className="text-sm font-medium text-gray-700">{detail.feedbackProductQuality}</p></div>}
+                  {detail.feedbackDelivery && <div><p className="text-xs text-gray-400">Delivery Experience</p><p className="text-sm font-medium text-gray-700">{detail.feedbackDelivery}</p></div>}
+                  {detail.feedbackRecommend && <div><p className="text-xs text-gray-400">Would Recommend</p><p className="text-sm font-medium text-gray-700">{detail.feedbackRecommend}</p></div>}
+                  {detail.feedback && <div><p className="text-xs text-gray-400">Comments</p><p className="text-sm text-gray-700">{detail.feedback}</p></div>}
+                </div>
+              ) : isCompanyUser ? (
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">1. Overall Experience</p>
                     <div className="flex items-center gap-1">
                       {[1,2,3,4,5].map(star => (
                         <button key={star} onClick={() => setFeedbackRating(star)} style={{ color: star <= feedbackRating ? '#f59e0b' : '#d1d5db' }}>
                           {star <= feedbackRating ? <MdStar size={28} /> : <MdStarBorder size={28} />}
                         </button>
                       ))}
+                      {feedbackRating > 0 && <span className="text-sm text-gray-500 ml-2">{feedbackRating}/5</span>}
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Comments</label>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">2. Product Quality</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {['Excellent', 'Good', 'Average', 'Poor'].map(opt => (
+                        <button key={opt} onClick={() => setFeedbackProductQuality(opt)}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${feedbackProductQuality === opt ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">3. Delivery Experience</p>
+                    <div className="flex gap-2">
+                      {['Delivered on Time', 'Delayed'].map(opt => (
+                        <button key={opt} onClick={() => setFeedbackDelivery(opt)}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${feedbackDelivery === opt ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2 font-medium">4. Would you recommend ProDiligix?</p>
+                    <div className="flex gap-2">
+                      {['Yes', 'No'].map(opt => (
+                        <button key={opt} onClick={() => setFeedbackRecommend(opt)}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${feedbackRecommend === opt ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1 font-medium">5. Comments or Suggestions (Optional)</p>
                     <textarea value={feedback} onChange={e => setFeedback(e.target.value)}
                       className="w-full border border-gray-200 rounded-lg p-3 text-sm outline-none focus:border-blue-400" rows={4} placeholder="Share your experience..." />
                   </div>
-                  <button onClick={submitFeedback} className="px-4 py-2 rounded-lg text-white text-sm" style={{ backgroundColor: BRAND }}>
+                  <button onClick={submitFeedback} className="px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: BRAND }}>
                     Submit Feedback
                   </button>
                 </div>
