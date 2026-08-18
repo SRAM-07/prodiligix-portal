@@ -74,31 +74,6 @@ export default function ClientITDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <span style={{ color: '#068BC9' }}>💳</span>
-              <p className="text-sm font-semibold text-gray-700">Wallet</p>
-            </div>
-            {wallet ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-400">Available Balance</p>
-                  <p className="text-2xl font-bold" style={{ color: '#068BC9' }}>
-                    ₹{(parseFloat(wallet.totalRechargedAmount || 0) - parseFloat(wallet.walletUsedAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Recharged</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.totalRechargedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Used</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.walletUsedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div className="h-2 rounded-full" style={{ backgroundColor: '#068BC9', width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">Wallet info unavailable</p>
-            )}
-          </div>
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <p className="text-sm font-semibold text-gray-700 mb-2">Status Overview</p>
           <div className="flex items-center justify-between">
@@ -132,6 +107,32 @@ export default function ClientITDashboard() {
             </div>
           </div>
           </div>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span style={{ color: '#068BC9' }}>💳</span>
+              <p className="text-sm font-semibold text-gray-700">Wallet</p>
+            </div>
+            {wallet ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-400">Available Balance</p>
+                  <p className="text-2xl font-bold" style={{ color: '#068BC9' }}>
+                    ₹{(parseFloat(wallet.totalRechargedAmount || 0) - parseFloat(wallet.walletUsedAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Recharged</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.totalRechargedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-400">Total Used</span><span className="font-medium text-gray-700">₹{parseFloat(wallet.walletUsedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="h-2 rounded-full" style={{ backgroundColor: '#068BC9', width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Wallet info unavailable</p>
+            )}
+          </div>
+
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
