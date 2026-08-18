@@ -251,12 +251,7 @@ export default function ClientDashboard() {
               </h2>
               <p className="text-sm text-gray-400">Here's what's happening with your services today.</p>
             </div>
-            <button
-              onClick={() => navigate('/client/logistics/book')}
-              className="px-5 py-2.5 rounded-lg text-white text-sm font-medium flex-shrink-0"
-              style={{ backgroundColor: '#22c55e' }}>
-              + Book a Shipment
-            </button>
+
           </div>
 
           <div className="grid grid-cols-5 gap-4 mt-5 pt-5 border-t border-gray-50 relative">

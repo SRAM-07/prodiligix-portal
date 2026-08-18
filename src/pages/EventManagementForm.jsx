@@ -115,13 +115,13 @@ export default function EventManagementForm() {
     setSubmitting(true);
 
     try {
-      await api.post('/api/events', {
+        await api.post('/api/events', {
         companyId,
         businessName: companyName,
         contactPersonName: form.contactPersonName,
         designation: form.designation,
         contactPersonEmail: form.contactPersonEmail,
-        contactPersonPhone: form.contactPersonPhone,
+        contactPersonPhonenumber: form.contactPersonPhone,
         companyAddress: form.companyAddress,
         eventType: form.eventType === 'Other' ? customEventType : form.eventType,
         eventDate: form.eventDate,

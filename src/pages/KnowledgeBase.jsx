@@ -82,8 +82,8 @@ export default function KnowledgeBase() {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 -mt-6 pb-10">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="px-6 -mt-6 pb-10">
+        <div className="bg-white rounded-xl shadow-lg">
 
           {/* Tabs */}
           <div className="flex overflow-x-auto border-b border-gray-100 sticky top-0 bg-white z-10">
@@ -191,7 +191,7 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
-                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Flyers_Polybags.jpeg"} alt="Flyers and Polybags" className="w-full h-48 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Flyers_Polybags.jpeg"} alt="Flyers and Polybags" className="w-full h-72 object-contain bg-white" />
                     <p className="text-xs text-center text-gray-400 py-2">Standard Polybag / Flyer Sizes</p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export default function KnowledgeBase() {
                 <h3 className="text-base font-semibold text-gray-700 mb-4">Box Quality Standards</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg overflow-hidden border-2" style={{ borderColor: '#22c55e' }}>
-                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Correct_Way.png"} alt="Correct packing" className="w-full h-40 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Correct_Way.png"} alt="Correct packing" className="w-full h-64 object-contain bg-white" />
                     <div className="text-center text-white text-sm font-semibold py-1.5" style={{ backgroundColor: '#16a34a' }}>
                       ✓ Correct Way
                     </div>
@@ -213,7 +213,7 @@ export default function KnowledgeBase() {
                     </div>
                   </div>
                   <div className="rounded-lg overflow-hidden border-2" style={{ borderColor: '#ef4444' }}>
-                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Incorrect_Way.png"} alt="Incorrect packing" className="w-full h-40 object-contain bg-white" />
+                    <img src={process.env.PUBLIC_URL + "/knowledge-base/Incorrect_Way.png"} alt="Incorrect packing" className="w-full h-64 object-contain bg-white" />
                     <div className="text-center text-white text-sm font-semibold py-1.5 bg-red-600">
                       ✕ Incorrect Way
                     </div>
@@ -244,7 +244,7 @@ export default function KnowledgeBase() {
                 </div>
 
                 <h3 className="text-base font-semibold mb-4" style={{ color: '#1e40af' }}>1. Leak Proofing (Liquid Items)</h3>
-                <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-4 mb-8" style={{ maxWidth: "900px" }}>
                   {[
                     { img: 'Heat_Shrink_Sleeve.jpeg', title: 'Heat Shrink Sleeve', desc: 'Secure bottle necks.' },
                     { img: 'Taping_Caps.jpeg', title: 'Taping Caps', desc: 'Tape firmly over the cap.' },
@@ -296,7 +296,7 @@ export default function KnowledgeBase() {
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-3">Light Weight Shipments</p>
                     <div className="rounded-lg border border-gray-100 overflow-hidden text-center">
-                      <img src={process.env.PUBLIC_URL + "/knowledge-base/Center_Seam_Taping.png"} alt="Center Seam Taping" className="w-full h-40 object-contain bg-gray-50" />
+                      <img src={process.env.PUBLIC_URL + "/knowledge-base/Center_Seam_Taping.png"} alt="Center Seam Taping" className="w-full h-64 object-contain bg-gray-50" />
                       <div className="bg-gray-50 p-3">
                         <p className="text-sm font-semibold text-gray-700">Center Seam Taping</p>
                         <p className="text-xs text-gray-400">Seal the center seam of top and bottom.</p>
@@ -306,7 +306,7 @@ export default function KnowledgeBase() {
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-3">Heavy Weight Shipments</p>
                     <div className="rounded-lg border border-gray-100 overflow-hidden text-center">
-                      <img src={process.env.PUBLIC_URL + "/knowledge-base/H-Taping.png"} alt="H-Taping" className="w-full h-40 object-contain bg-gray-50" />
+                      <img src={process.env.PUBLIC_URL + "/knowledge-base/H-Taping.png"} alt="H-Taping" className="w-full h-64 object-contain bg-gray-50" />
                       <div className="bg-gray-50 p-3">
                         <p className="text-sm font-semibold text-gray-700">H-Taping Method</p>
                         <p className="text-xs text-gray-400">Seal center AND edge seams (H-shape).</p>
