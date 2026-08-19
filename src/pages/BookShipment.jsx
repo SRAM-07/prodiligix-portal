@@ -20,7 +20,7 @@ const TRANSPORTERS_BY_MODE = {
 
 const modeTypes = ['Forward', 'Reverse', 'Point to Point'];
 const shipmentDetails = ['Laptops', 'Documents', 'Electronics', 'Mobile Phones', 'Other'];
-const boxTypes = ['Corrugated Box', 'Wooden Box', 'Plastic Box', 'Envelope'];
+const boxTypes = ['Corrugated Box', 'Wooden Box', 'Plastic Box', 'Envelope', 'Other'];
 const dimensionUnits = ['cms', 'inch', 'feet'];
 const URGENT_OR_MANUAL_MODES = ['Air Urgent', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 
