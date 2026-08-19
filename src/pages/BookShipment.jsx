@@ -60,7 +60,7 @@ export default function BookShipment() {
   });
 
   const [boxes, setBoxes] = useState([
-    { id: 1, noOfBoxes: 1, boxType: '', length: '', width: '', height: '' }
+    { id: 1, noOfBoxes: 1, boxType: '', otherBoxType: '', length: '', width: '', height: '' }
   ]);
 
   const [calculatedRate, setCalculatedRate] = useState(null);
@@ -115,7 +115,7 @@ export default function BookShipment() {
 
   const addBoxGroup = () => {
     setBoxes(prev => [...prev, {
-      id: Date.now(), noOfBoxes: 1, boxType: '', length: '', width: '', height: ''
+      id: Date.now(), noOfBoxes: 1, boxType: '', otherBoxType: '', length: '', width: '', height: ''
     }]);
   };
 
@@ -196,7 +196,7 @@ export default function BookShipment() {
     if (!form.noOfBoxes || parseInt(form.noOfBoxes) < 1) newErrors.noOfBoxes = 'Number of boxes is required';
 
     const incompleteBox = boxes.some(b =>
-      !b.boxType || !b.length || !b.width || !b.height || !b.noOfBoxes || parseInt(b.noOfBoxes) < 1
+      !b.boxType || !b.length || !b.width || !b.height || !b.noOfBoxes || parseInt(b.noOfBoxes) < 1 || (b.boxType === 'Other' && !b.otherBoxType)
     );
     if (incompleteBox) newErrors.boxes = 'Please fill box type and all dimensions for every box group';
 
@@ -599,6 +599,15 @@ export default function BookShipment() {
                           <option value="">Select Type</option>
                           {boxTypes.map((t, i) => <option key={i}>{t}</option>)}
                         </select>
+                        {box.boxType === 'Other' && (
+                          <input
+                            type="text"
+                            placeholder="Specify box type *"
+                            value={box.otherBoxType}
+                            onChange={e => handleBoxChange(box.id, 'otherBoxType', e.target.value)}
+                            className="w-full mt-2 bg-white border border-red-300 rounded-lg px-2 py-2 text-xs text-gray-700 outline-none"
+                          />
+                        )}
                       </div>
                       <div>
                         <p className="text-xs text-gray-400 mb-1">No. of Boxes</p>
