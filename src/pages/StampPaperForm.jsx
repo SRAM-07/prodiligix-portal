@@ -64,7 +64,7 @@ export default function StampPaperForm() {
   const validate = () => {
     const newErrors = {};
     if (!form.firstPartyName) newErrors.firstPartyName = 'Required';
-    if (!form.considerationValue || parseFloat(form.considerationValue) <= 0) newErrors.considerationValue = 'Required';
+    if (form.considerationValue === '' || form.considerationValue === null || form.considerationValue === undefined) newErrors.considerationValue = 'Required';
     if (!form.secondPartyName) newErrors.secondPartyName = 'Required';
     if (!form.denomination) newErrors.denomination = 'Required';
     if (!form.description) newErrors.description = 'Required';

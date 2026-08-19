@@ -254,13 +254,9 @@ export default function StampPaper() {
                               View
                             </button>
                             {order.scannedCopy ? (
-                              <button
-                                onClick={() => window.open(order.scannedCopy, '_blank')}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                                style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
-                                <MdDownload size={14} />
-                                Stamp Paper
-                              </button>
+                              <span className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: '#22c55e', backgroundColor: '#dcfce7' }}>
+                                Stamp Paper ✓
+                              </span>
                             ) : (
                               <span className="text-xs text-gray-400">No Doc</span>
                             )}

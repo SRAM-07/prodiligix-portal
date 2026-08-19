@@ -77,6 +77,23 @@ export default function StampPaperDetail() {
     }
   };
 
+  const handleUploadScannedCopy = async () => {
+    if (!uploadFile) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      const response = await api.post(`/api/stamp-paper/${id}/upload-scanned-copy`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setDetail(response.data);
+      setUploadFile(null);
+      alert('Stamp paper uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload:', error);
+      alert('Failed to upload stamp paper');
+    }
+  };
+
   if (loading) return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center">
       <p className="text-gray-400 text-sm">Loading...</p>
@@ -226,6 +243,43 @@ export default function StampPaperDetail() {
             </div>
           </div>
 
+          {/* Download Stamp Paper — visible to all when uploaded */}
+          {detail.scannedCopy && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MdAttachFile size={18} style={{ color: '#068BC9' }} />
+                <p className="text-sm font-semibold text-gray-700">Stamp Paper Documents</p>
+              </div>
+              <div className="space-y-2">
+                {(() => {
+                  let urls = [];
+                  try {
+                    const parsed = JSON.parse(detail.scannedCopy);
+                    urls = Array.isArray(parsed) ? parsed : [detail.scannedCopy];
+                  } catch(e) { urls = [detail.scannedCopy]; }
+                  return urls.map((url, idx) => {
+                    const fullUrl = url.startsWith('http') ? url : `${(process.env.REACT_APP_API_URL || '').replace('/spring-api', '')}${url}`;
+                    const filename = url.split('/').pop();
+                    return (
+                      <div key={idx} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <MdAttachFile size={16} style={{ color: '#068BC9' }} />
+                          <span className="text-sm text-gray-600">Stamp Paper {idx + 1} — {filename}</span>
+                        </div>
+                        <button
+                          onClick={() => window.open(fullUrl, '_blank')}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                          style={{ background: '#068BC9' }}>
+                          <MdDownload size={14} />
+                          Download
+                        </button>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
           {/* Admin Section — hidden for company_user */}
           {isAdmin && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-4">
@@ -283,20 +337,7 @@ export default function StampPaperDetail() {
               {/* Upload Stamp Paper — admin only */}
               <div className="mb-4">
                 <p className="text-xs text-gray-400 mb-1">Upload Stamp Paper (PDF)</p>
-                {detail.scannedCopy ? (
-                  <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2.5 bg-gray-50">
-                    <div className="flex items-center gap-2">
-                      <MdAttachFile size={16} style={{ color: '#068BC9' }} />
-                      <span className="text-sm text-gray-600 truncate">Document.pdf</span>
-                    </div>
-                    <button
-                      onClick={() => window.open(detail.scannedCopy, '_blank')}
-                      className="p-1 rounded hover:bg-gray-100">
-                      <MdDownload size={16} style={{ color: '#068BC9' }} />
-                    </button>
-                  </div>
-                ) : (
-                  <div>
+                <div>
                     <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
                       <MdUpload size={18} style={{ color: '#068BC9' }} />
                       <span className="text-sm text-gray-500">
@@ -312,13 +353,18 @@ export default function StampPaperDetail() {
                     {uploadFile && (
                       <div className="flex items-center justify-between mt-2 bg-blue-50 rounded-lg px-3 py-2">
                         <span className="text-xs text-gray-600">{uploadFile.name}</span>
-                        <button onClick={() => setUploadFile(null)}>
-                          <MdClose size={14} className="text-gray-400" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer" title="Change file">
+                            <MdUpload size={14} className="text-blue-400" />
+                            <input type="file" accept=".pdf" className="hidden" onChange={e => setUploadFile(e.target.files[0])} />
+                          </label>
+                          <button onClick={() => setUploadFile(null)}>
+                            <MdClose size={14} className="text-gray-400" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
               </div>
             </div>
           )}
@@ -342,7 +388,10 @@ export default function StampPaperDetail() {
               </button>
               {isAdmin && !isCancelled && (
                 <button
-                  onClick={handleUpdateStatus}
+                  onClick={async () => {
+                  if (uploadFile) await handleUploadScannedCopy();
+                  await handleUpdateStatus();
+                }}
                   disabled={updating}
                   className="px-6 py-2.5 rounded-lg text-sm text-white font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ backgroundColor: '#068BC9' }}>

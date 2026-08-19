@@ -121,6 +121,11 @@ export default function Reports() {
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Latest');
   const [searchText, setSearchText] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sinceDate, setSinceDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterCompany, setFilterCompany] = useState('');
   const [loading, setLoading] = useState(true);
 
   const [logisticsData, setLogisticsData] = useState([]);
@@ -156,12 +161,37 @@ export default function Reports() {
     fetchAll();
   }, []);
 
+  const applyFilters = (data, dateField = 'createdAt') => {
+    let result = [...data];
+    if (searchText) {
+      result = result.filter(r =>
+        Object.values(r).some(v => v && v.toString().toLowerCase().includes(searchText.toLowerCase()))
+      );
+    }
+    if (activeFilter === 'Since Date' && sinceDate) {
+      result = result.filter(r => r[dateField] && r[dateField].split('T')[0] >= sinceDate);
+    }
+    if (activeFilter === 'Date Range' && dateFrom && dateTo) {
+      result = result.filter(r => r[dateField] && r[dateField].split('T')[0] >= dateFrom && r[dateField].split('T')[0] <= dateTo);
+    }
+    if (activeFilter === 'Status' && filterStatus) {
+      result = result.filter(r => (r.status || r.deliveryStatus || r.workflowStatus || '').toLowerCase() === filterStatus.toLowerCase());
+    }
+    if (activeFilter === 'Company' && filterCompany) {
+      result = result.filter(r => (r.companyId || r.businessName || r.companyName || '').toString().toLowerCase().includes(filterCompany.toLowerCase()));
+    }
+    if (activeFilter === 'Latest') {
+      result = result.slice(-50).reverse();
+    }
+    return result;
+  };
+
   const handleDownload = () => {
     let dataToExport = [];
     let filename = 'report';
 
     if (activeTab === 'logistics') {
-      dataToExport = logisticsData.map(r => {
+      dataToExport = applyFilters(logisticsData, 'createdAt').map(r => {
         const row = {
           'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
           'Service Request ID': r.serviceRequestId,
@@ -191,7 +221,7 @@ export default function Reports() {
       });
       filename = 'Logistics_MIS_Report';
     } else if (activeTab === 'stamp') {
-      dataToExport = stampData.map(r => ({
+      dataToExport = applyFilters(stampData, 'createdAt').map(r => ({
         'Service Request ID': r.serviceRequestId,
         '1st Party Name': r.firstPartyName,
         '2nd Party Name': r.secondPartyName,
@@ -204,7 +234,7 @@ export default function Reports() {
       }));
       filename = 'StampPaper_MIS_Report';
     } else if (activeTab === 'gifting') {
-      dataToExport = giftingData.map(r => ({
+      dataToExport = applyFilters(giftingData, 'createdAt').map(r => ({
         'Service Request ID': r.serviceRequestId,
         'Company Name': r.companyName,
         'Contact Person': r.contactPersonName,
@@ -221,7 +251,7 @@ export default function Reports() {
       }));
       filename = 'CorporateGifting_MIS_Report';
     } else if (activeTab === 'events') {
-      dataToExport = eventsData.map(r => ({
+      dataToExport = applyFilters(eventsData, 'createdAt').map(r => ({
         'Service Request ID': r.serviceRequestId,
         'Company': r.businessName,
         'Contact Person': r.contactPersonName,
@@ -238,7 +268,7 @@ export default function Reports() {
       }));
       filename = 'Events_MIS_Report';
     } else if (activeTab === 'it') {
-      dataToExport = itData.map(r => ({
+      dataToExport = applyFilters(itData, 'createdAt').map(r => ({
         'Service Request ID': r.serviceRequestId,
         'Contact Person': r.contactPersonName,
         'Email': r.email,
@@ -264,10 +294,7 @@ export default function Reports() {
   };
 
   const renderLogistics = () => {
-    const filtered = logisticsData.filter(r =>
-      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.shipmentAwbNumber || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = applyFilters(logisticsData, 'createdAt');
     const baseCols = ['Created Date', 'Service Request ID', 'Company ID', 'Modes', 'Transport Mode',
       'Delivery Partner', 'Delivery Status', 'Shipment Detail', 'Declared Value',
       'Actual Weight', 'Scan Weight', 'No. of Boxes', 'AWB Number'];
@@ -334,10 +361,7 @@ export default function Reports() {
   };
 
   const renderStamp = () => {
-    const filtered = stampData.filter(r =>
-      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.firstPartyName || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = applyFilters(stampData, 'createdAt');
     return (
       <div className="overflow-x-auto">
         <table className="w-full min-w-max">
@@ -377,11 +401,7 @@ export default function Reports() {
   };
 
   const renderGifting = () => {
-    const filtered = giftingData.filter(r =>
-      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.companyName || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = applyFilters(giftingData, 'createdAt');
     return (
       <div className="overflow-x-auto">
         <table className="w-full min-w-max">
@@ -435,11 +455,7 @@ export default function Reports() {
   };
 
   const renderEvents = () => {
-    const filtered = eventsData.filter(r =>
-      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.businessName || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = applyFilters(eventsData, 'createdAt');
     return (
       <div className="overflow-x-auto">
         <table className="w-full min-w-max">
@@ -487,11 +503,7 @@ export default function Reports() {
   };
 
   const renderIT = () => {
-    const filtered = itData.filter(r =>
-      (r.serviceRequestId || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.contactPersonName || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (r.serviceType || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = applyFilters(itData, 'createdAt');
     return (
       <div className="overflow-x-auto">
         <table className="w-full min-w-max">
@@ -620,8 +632,29 @@ export default function Reports() {
               <span className="text-xs font-medium" style={{ color: '#068BC9' }}>
                 {activeFilter}
               </span>
-              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveFilter('Latest')}/>
+              <MdClose size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveFilter('Latest'); setDateFrom(''); setDateTo(''); setSinceDate(''); setFilterStatus(''); setFilterCompany(''); }}/>
             </div>
+            {activeFilter === 'Since Date' && (
+              <input type="date" value={sinceDate} onChange={e => setSinceDate(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 outline-none" />
+            )}
+            {activeFilter === 'Date Range' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 outline-none" />
+                <span className="text-xs text-gray-400">to</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 outline-none" />
+              </div>
+            )}
+            {activeFilter === 'Status' && (
+              <input type="text" placeholder="Enter status..." value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 outline-none w-36" />
+            )}
+            {activeFilter === 'Company' && (
+              <input type="text" placeholder="Company name or ID..." value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 outline-none w-40" />
+            )}
 
             <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
               <MdRefresh size={18} className="text-gray-400"/>

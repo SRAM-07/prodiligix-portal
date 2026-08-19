@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { getCurrentUser } from './services/authService';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Logistics from './pages/Logistics';
@@ -40,6 +41,15 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import ITSolutionForm from './pages/ITSolutionForm';
+
+const ADMIN_ROLES_CHECK = ['super_admin', 'crm_user'];
+const RoleBasedRedirect = ({ adminPath, clientComponent }) => {
+  const user = getCurrentUser();
+  if (user && ADMIN_ROLES_CHECK.includes(user.role)) {
+    return <Navigate to={adminPath} replace />;
+  }
+  return clientComponent;
+};
 
 
 const ADMIN_ROLES = ['super_admin', 'crm_user'];
@@ -123,7 +133,7 @@ function App() {
         } />
         <Route path="/stamp-paper" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ClientStampPaperDashboard />
+            <RoleBasedRedirect adminPath="/stamp-paper/list" clientComponent={<ClientStampPaperDashboard />} />
           </ProtectedRoute>
         } />
         <Route path="/stamp-paper/list" element={
@@ -143,7 +153,7 @@ function App() {
         } />
         <Route path="/gifting" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ClientGiftingDashboard />
+            <RoleBasedRedirect adminPath="/gifting/list" clientComponent={<ClientGiftingDashboard />} />
           </ProtectedRoute>
         } />
         <Route path="/gifting/list" element={
@@ -163,7 +173,7 @@ function App() {
         } />
         <Route path="/events" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ClientEventsDashboard />
+            <RoleBasedRedirect adminPath="/events/list" clientComponent={<ClientEventsDashboard />} />
           </ProtectedRoute>
         } />
         <Route path="/events/list" element={
@@ -183,7 +193,7 @@ function App() {
         } />
         <Route path="/it-solutions" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <ClientITDashboard />
+            <RoleBasedRedirect adminPath="/it-solutions/list" clientComponent={<ClientITDashboard />} />
           </ProtectedRoute>
         } />
         <Route path="/it-solutions/list" element={
