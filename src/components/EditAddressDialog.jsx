@@ -19,6 +19,23 @@ export default function EditAddressDialog({ address, onClose, onSuccess }) {
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
+  const fetchPincodeDetails = async (pincode) => {
+    if (pincode.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+        const data = await res.json();
+        if (data[0].Status === 'Success') {
+          const postOffice = data[0].PostOffice[0];
+          setForm(prev => ({
+            ...prev,
+            city: prev.city || postOffice.District,
+            state: prev.state || postOffice.State
+          }));
+        }
+      } catch (e) {}
+    }
+  };
+
   const validate = () => {
     if (!form.facilityName.trim()) return 'Facility/Location name is required';
     if (!form.contactPersonName.trim()) return 'Contact person name is required';
