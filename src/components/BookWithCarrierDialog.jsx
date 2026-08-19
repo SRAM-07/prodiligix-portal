@@ -78,6 +78,14 @@ export default function BookWithCarrierDialog({ shipment, onClose, onSuccess }) 
                   <p className="text-xs text-gray-400">Payment Mode</p>
                   <p className="text-sm font-medium text-gray-700">Prepaid</p>
                 </div>
+                <div>
+                  <p className="text-xs text-gray-400">Final Rate</p>
+                  <p className="text-sm font-bold" style={{ color: '#068BC9' }}>₹{shipment.shipmentRate || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Transporter</p>
+                  <p className="text-sm font-medium text-gray-700">{shipment.transporter || '—'}</p>
+                </div>
               </div>
               <div>
                 <p className="text-xs text-gray-400">Shipment Details</p>
