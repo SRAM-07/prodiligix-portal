@@ -115,7 +115,7 @@ export default function CorporateGifting() {
   const fetchGiftings = async () => {
     try {
       const response = await api.get('/api/corporate-giftings');
-      setGiftingData(response.data);
+      setGiftingData([...response.data].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (error) {
       console.error('Failed to fetch corporate giftings:', error);
     } finally {

@@ -50,7 +50,7 @@ export default function ITSolutions() {
     const fetchITSolutions = async () => {
       try {
         const response = await api.get('/api/it-solutions');
-        setItData(response.data);
+        setItData([...response.data].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (error) {
         console.error('Failed to fetch IT solutions:', error);
       } finally {

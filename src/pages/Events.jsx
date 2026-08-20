@@ -48,7 +48,7 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       const response = await api.get('/api/events');
-      setEventsData(response.data);
+      setEventsData([...response.data].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (error) {
       console.error('Failed to fetch events:', error);
     } finally {
