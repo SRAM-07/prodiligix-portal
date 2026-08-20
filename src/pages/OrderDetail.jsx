@@ -480,8 +480,21 @@ export default function OrderDetail() {
                   )}
 
                   {shipment.shipmentWithLabel ? (
-                    <a href={fullFileUrl(shipment.shipmentWithLabel)} target="_blank" rel="noreferrer"
-                      className="border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <button onClick={async () => {
+                      const url = shipment.shipmentWithLabel;
+                      if (url && url.startsWith('http') && !url.includes('/uploads/')) {
+                        // Expired Delhivery S3 URL - refresh it
+                        try {
+                          const res = await api.post(`/api/shipments/${shipment.id}/refresh-label`);
+                          window.open(fullFileUrl(res.data.shipmentWithLabel), '_blank');
+                        } catch(e) {
+                          window.open(fullFileUrl(url), '_blank');
+                        }
+                      } else {
+                        window.open(fullFileUrl(url), '_blank');
+                      }
+                    }}
+                      className="w-full border border-gray-200 rounded-xl p-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#e0f2fe' }}>
                           <MdAttachFile size={20} style={{ color: '#068BC9' }}/>
@@ -489,7 +502,7 @@ export default function OrderDetail() {
                         <p className="text-sm font-medium text-gray-700">Shipment Label</p>
                       </div>
                       <MdDownload size={20} style={{ color: '#068BC9' }}/>
-                    </a>
+                    </button>
                   ) : (
                     <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
                       <p className="text-sm text-gray-400">No label uploaded yet</p>
