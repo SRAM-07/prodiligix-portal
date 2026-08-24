@@ -1,5 +1,5 @@
 // src/components/EditShipmentDialog.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MdClose } from 'react-icons/md';
 import api from '../services/api';
 
@@ -15,6 +15,7 @@ export default function EditShipmentDialog({ shipment, onClose, onSuccess }) {
 
     // Full fields (only editable if no AWB)
     transportMode: shipment.transportMode ?? '',
+    transporter: shipment.transporter ?? '',
     shipmentDetails: shipment.shipmentDetails ?? '',
     shipmentDeclaredValue: shipment.shipmentDeclaredValue ?? '',
     deliveryChallanNumber: shipment.deliveryChallanNumber ?? '',
@@ -25,6 +26,61 @@ export default function EditShipmentDialog({ shipment, onClose, onSuccess }) {
     sendingPlantId: shipment.sendingPlantId ?? '',
     receivingPlantId: shipment.receivingPlantId ?? '',
   });
+
+  const [newRate, setNewRate] = useState(null);
+  const [pins, setPins] = useState({ from: null, to: null });
+
+  // Shipment API returns address ids only, so fetch both to get pincodes for rating.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [p1, p2] = await Promise.all([
+          api.get(`/api/addresses/${shipment.pickupAddressId}`),
+          api.get(`/api/addresses/${shipment.deliveryAddressId}`),
+        ]);
+        if (!cancelled) setPins({ from: p1.data.zipcode, to: p2.data.zipcode });
+      } catch {
+        if (!cancelled) setPins({ from: null, to: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [shipment.pickupAddressId, shipment.deliveryAddressId]);
+
+
+  // Refetch the carrier rate when transporter or transport mode changes.
+  // Shown for confirmation, not applied automatically, since applying it
+  // debits or credits the client's wallet by the difference.
+  useEffect(() => {
+    const fromPincode = pins.from;
+    const toPincode = pins.to;
+    const unchanged = form.transporter === shipment.transporter
+      && form.transportMode === shipment.transportMode;
+    if (unchanged || !form.transporter || !form.transportMode || !fromPincode || !toPincode) {
+      setNewRate(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          fromPincode,
+          toPincode,
+          weight: form.scanWeight || shipment.scanWeight || 0,
+          mode: form.transportMode.toLowerCase(),
+          declaredValue: form.shipmentDeclaredValue || 0,
+          insurance: !!shipment.insuranceRequired,
+          packageRequired: !!shipment.packageRequired,
+          provider: form.transporter,
+          companyId: shipment.companyId,
+        });
+        const res = await api.get(`/api/shipments/calculate-rate?${params.toString()}`);
+        setNewRate(res.data.charges?.total ?? null);
+      } catch {
+        setNewRate(null);
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [form.transporter, form.transportMode, form.scanWeight, form.shipmentDeclaredValue, pins, shipment]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -114,6 +170,29 @@ export default function EditShipmentDialog({ shipment, onClose, onSuccess }) {
                       <option value="Air">Air</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Transporter</label>
+                    <select
+                      value={form.transporter}
+                      onChange={set('transporter')}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#068BC9]">
+                      <option value="">Select</option>
+                      <option value="Delhivery">Delhivery</option>
+                      <option value="Bluedart">Bluedart</option>
+                    </select>
+                  </div>
+                  {newRate !== null && (
+                    <div className="col-span-2 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50">
+                      <p className="text-xs text-gray-500 mb-1">Recalculated rate</p>
+                      <p className="text-sm text-gray-700">
+                        <span className="line-through text-gray-400">Rs {shipment.shipmentRate ?? '-'}</span>
+                        <span className="mx-2">to</span>
+                        <span className="font-medium">Rs {newRate}</span>
+                      </p>
+                      <button type="button" onClick={() => { setForm(f => ({ ...f, shipmentRate: newRate })); setNewRate(null); }}
+                        className="mt-1 text-xs font-medium text-[#068BC9]">Apply this rate</button>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Box Quantity</label>
                     <input
