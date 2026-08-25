@@ -137,6 +137,7 @@ export default function EventsDetail() {
   };
 
   const currentStepIndex = detail ? WORKFLOW_STEPS.findIndex(s => s.key === detail.workflowStatus) : 0;
+  const allDone = detail?.workflowStatus === 'feedback_received';
 
   const tabs = [
     { key: 'details', label: 'Details' },
@@ -201,24 +202,107 @@ export default function EventsDetail() {
 
           {/* WORKFLOW */}
           {activeTab === 'workflow' && (
+            <div>
+              {/* Progress header */}
+              <div style={{ background:'linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%)', borderRadius:'20px', border:'1px solid #bae6fd', padding:'20px 24px', marginBottom:'16px' }}>
+                <p style={{ margin:0, fontSize:'11px', fontWeight:700, color:'#0369a1', letterSpacing:'1.5px', textTransform:'uppercase', opacity:0.7 }}>ORDER JOURNEY</p>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:'8px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                    <span style={{ fontSize:'22px' }}>{WORKFLOW_STEPS[currentStepIndex]?.icon || '📋'}</span>
+                    <div>
+                      <p style={{ margin:0, fontSize:'18px', fontWeight:800, color:'#0c4a6e' }}>{WORKFLOW_STEPS[currentStepIndex]?.label || 'In Progress'}</p>
+                      <p style={{ margin:0, fontSize:'12px', color:'#64748b' }}>{currentStepIndex} of {WORKFLOW_STEPS.length-1} steps completed</p>
+                    </div>
+                  </div>
+                  <span style={{ fontSize:'36px', fontWeight:900, color: currentStepIndex === WORKFLOW_STEPS.length-1 ? '#22c55e' : '#068BC9', opacity:0.85 }}>
+                    {Math.round((currentStepIndex/(WORKFLOW_STEPS.length-1))*100)}%
+                  </span>
+                </div>
+                <div style={{ marginTop:'12px', height:'6px', background:'rgba(255,255,255,0.5)', borderRadius:'99px', overflow:'hidden' }}>
+                  <div style={{ height:'100%', borderRadius:'99px', background: currentStepIndex === WORKFLOW_STEPS.length-1 ? '#22c55e':'#068BC9', width:`${Math.round((currentStepIndex/(WORKFLOW_STEPS.length-1))*100)}%`, transition:'width 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
+                </div>
+              </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
               <p className="text-sm font-semibold text-gray-700 mb-6">Workflow Progress</p>
-              <div className="space-y-3">
-                {WORKFLOW_STEPS.map((step, i) => (
-                  <div key={step.key} className={`flex items-center gap-3 p-3 rounded-lg ${i === currentStepIndex ? 'bg-blue-50 border border-blue-200' : i < currentStepIndex ? 'bg-green-50' : 'bg-gray-50'}`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${i < currentStepIndex ? 'bg-green-500' : i === currentStepIndex ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                      {i < currentStepIndex ? '✓' : i + 1}
-                    </div>
-                    <span className={`text-sm font-medium ${i === currentStepIndex ? 'text-blue-700' : i < currentStepIndex ? 'text-green-700' : 'text-gray-400'}`}>{step.label}</span>
-                    {i === currentStepIndex && isAdmin && i < WORKFLOW_STEPS.length - 1 && (
-                      <button onClick={() => updateWorkflowStatus(WORKFLOW_STEPS[i + 1].key)}
-                        className="ml-auto text-xs px-3 py-1 rounded-lg text-white" style={{ backgroundColor: BRAND }}>
-                        Move to Next →
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <div style={{ padding:'8px 4px' }}>
+                {(() => {
+                  const COLS = 4;
+                  const rows = [];
+                  for (let r = 0; r < Math.ceil(WORKFLOW_STEPS.length / COLS); r++) {
+                    rows.push(WORKFLOW_STEPS.slice(r * COLS, r * COLS + COLS));
+                  }
+                  return rows.map((rowSteps, rowIdx) => {
+                    const isEvenRow = rowIdx % 2 === 0;
+                    const displaySteps = isEvenRow ? rowSteps : [...rowSteps].reverse();
+                    const globalStartIdx = rowIdx * COLS;
+                    return (
+                      <div key={rowIdx}>
+                        <div style={{ display:'flex', alignItems:'stretch', gap:'0' }}>
+                          {displaySteps.map((step, colIdx) => {
+                            const i = isEvenRow ? globalStartIdx + colIdx : globalStartIdx + (rowSteps.length - 1 - colIdx);
+                            const isDone = allDone ? true : i < currentStepIndex;
+                            const isCurrent = i === currentStepIndex && !allDone;
+                            const isPending = !isDone && !isCurrent;
+                            const isLastStep = i === WORKFLOW_STEPS.length - 1;
+                            const isLastInRow = colIdx === displaySteps.length - 1;
+                            return (
+                              <div key={step.key} style={{ display:'flex', alignItems:'center', flex:1 }}>
+                                <div style={{
+                                  flex:1,
+                                  background: isDone?'#f0fdf4':isCurrent?'#eff6ff':'#f8fafc',
+                                  borderRadius:'16px',
+                                  border:`2px solid ${isDone?'#86efac':isCurrent?'#93c5fd':'#e2e8f0'}`,
+                                  padding:'16px 14px',
+                                  display:'flex',
+                                  flexDirection:'column',
+                                  alignItems:'center',
+                                  gap:'10px',
+                                  opacity: isPending?0.5:1,
+                                  transition:'all 0.3s ease',
+                                  boxShadow: isCurrent?'0 4px 14px rgba(6,139,201,0.15)':isDone?'0 2px 8px rgba(34,197,94,0.1)':'none',
+                                  minHeight:'140px',
+                                  justifyContent:'center'
+                                }}>
+                                  <div style={{
+                                    width:'44px', height:'44px', borderRadius:'50%',
+                                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px',
+                                    background: isDone?'#22c55e':isCurrent?'#068BC9':'#e2e8f0',
+                                    color:'white', fontWeight:800,
+                                    boxShadow: isDone?'0 2px 8px rgba(34,197,94,0.3)':isCurrent?'0 4px 14px rgba(6,139,201,0.4)':'none'
+                                  }}>
+                                    {isDone ? '✓' : i + 1}
+                                  </div>
+                                  <p style={{ margin:0, fontSize:'12px', fontWeight:isCurrent?700:isDone?600:400, color:isDone?'#15803d':isCurrent?'#1e40af':'#94a3b8', textAlign:'center', lineHeight:'1.3' }}>{step.label}</p>
+                                  {isCurrent && <p style={{ margin:0, fontSize:'10px', color:'#3b82f6', display:'flex', alignItems:'center', gap:'4px' }}><span style={{ width:'5px', height:'5px', borderRadius:'50%', background:'#3b82f6', display:'inline-block' }} /> In progress</p>}
+                                  {isCurrent && isAdmin && !isLastStep && (
+                                    <button onClick={() => updateWorkflowStatus(WORKFLOW_STEPS[i+1].key)}
+                                      style={{ fontSize:'11px', padding:'6px 16px', borderRadius:'8px', color:'white', background:'#068BC9', border:'none', cursor:'pointer', fontWeight:700, width:'100%' }}>
+                                      Next →
+                                    </button>
+                                  )}
+                                </div>
+                                {!isLastInRow && (
+                                  <div style={{ display:'flex', alignItems:'center', padding:'0 6px', flexShrink:0 }}>
+                                    {!isEvenRow && <div style={{ width:0, height:0, borderTop:'5px solid transparent', borderBottom:'5px solid transparent', borderRight:`7px solid ${isDone?'#22c55e':'#e2e8f0'}` }} />}
+                                    <div style={{ width:'24px', height:'2.5px', background:isDone?'#22c55e':'#e2e8f0', borderRadius:'99px' }} />
+                                    {isEvenRow && <div style={{ width:0, height:0, borderTop:'5px solid transparent', borderBottom:'5px solid transparent', borderLeft:`7px solid ${isDone?'#22c55e':'#e2e8f0'}` }} />}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {rowIdx < rows.length - 1 && (
+                          <div style={{ display:'flex', justifyContent: isEvenRow ? 'flex-end' : 'flex-start', padding:'0 24px' }}>
+                            <div style={{ width:'2.5px', height:'32px', background: (globalStartIdx + COLS - 1) < currentStepIndex ? '#22c55e' : '#e2e8f0', borderRadius:'99px' }} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
+            </div>
             </div>
           )}
 
