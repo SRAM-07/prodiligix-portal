@@ -12,17 +12,17 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE_URL}${path}`) : null;
 
 const WORKFLOW_STEPS = [
-  { key: 'event_submitted', label: 'Event Details Submitted' },
-  { key: 'under_review', label: 'Under Review' },
-  { key: 'quotation_shared', label: 'Quotation Shared' },
-  { key: 'quotation_accepted', label: 'Quotation Accepted' },
-  { key: 'awaiting_po', label: 'Awaiting PO' },
-  { key: 'design_approved', label: 'Design Approved' },
-  { key: 'under_printing', label: 'Under Printing' },
-  { key: 'setup_in_progress', label: 'Setup in Progress' },
-  { key: 'event_execution', label: 'Event Execution' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'feedback_received', label: 'Feedback Received' },
+  { key: 'event_submitted', label: 'Event Details Submitted', icon: '📋' },
+  { key: 'under_review', label: 'Under Review', icon: '🔍' },
+  { key: 'quotation_shared', label: 'Quotation Shared', icon: '📄' },
+  { key: 'quotation_accepted', label: 'Quotation Accepted', icon: '✅' },
+  { key: 'awaiting_po', label: 'Awaiting PO', icon: '📝' },
+  { key: 'design_approved', label: 'Design Approved', icon: '🎨' },
+  { key: 'under_printing', label: 'Under Printing', icon: '🖨️' },
+  { key: 'setup_in_progress', label: 'Setup in Progress', icon: '🔧' },
+  { key: 'event_execution', label: 'Event Execution', icon: '🎤' },
+  { key: 'completed', label: 'Completed', icon: '🏁' },
+  { key: 'feedback_received', label: 'Feedback Received', icon: '⭐' },
 ];
 
 function InfoRow({ label, value }) {
@@ -42,6 +42,7 @@ export default function EventsDetail() {
   const [activeTab, setActiveTab] = useState('details');
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState('');
+  const [completedStepLabel, setCompletedStepLabel] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [respondentName, setRespondentName] = useState('');
@@ -89,7 +90,9 @@ export default function EventsDetail() {
   const updateWorkflowStatus = async (status) => {
     try {
       await api.patch(`/api/events/${id}/workflow-status`, { workflowStatus: status });
-      setToast('Status updated');
+      const newIndex = WORKFLOW_STEPS.findIndex(s => s.key === status);
+      setCompletedStepLabel(WORKFLOW_STEPS[newIndex]?.label);
+      setTimeout(() => setCompletedStepLabel(null), 2500);
       fetchDetail();
     } catch { setToast('Failed to update status'); }
   };
@@ -144,6 +147,7 @@ export default function EventsDetail() {
     { key: 'workflow', label: 'Status' },
     { key: 'quotations', label: 'Quotations' },
     { key: 'po', label: 'Purchase Order' },
+    { key: 'design', label: 'Design' },
     { key: 'feedback', label: 'Feedback' },
   ];
 
@@ -155,6 +159,17 @@ export default function EventsDetail() {
       <SmartSidebar onToggle={setSidebarExpanded} />
       <div className="flex-1 overflow-y-auto" style={{ marginLeft: sidebarExpanded ? '240px' : '64px', transition: 'margin-left 0.3s ease' }}>
         {toast && <div className="fixed top-4 right-4 z-50 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg">{toast}</div>}
+        {completedStepLabel && (
+          <div style={{ position:'fixed', bottom:'80px', left:'50%', transform:'translateX(-50%)', backgroundColor:'#22c55e', color:'white', borderRadius:'50px', padding:'12px 24px', zIndex:100, display:'flex', alignItems:'center', gap:'10px', boxShadow:'0 8px 24px rgba(34,197,94,0.4)', animation:'slideUp 0.4s ease' }}>
+            <span style={{ fontSize:'20px' }}>🎉</span>
+            <div>
+              <p style={{ fontSize:'11px', opacity:0.85, margin:0 }}>Status Updated</p>
+              <p style={{ fontSize:'14px', fontWeight:700, margin:0 }}>{completedStepLabel}</p>
+            </div>
+            <span style={{ fontSize:'18px' }}>✓</span>
+            <style>{`@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`}</style>
+          </div>
+        )}
 
         <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center gap-3">
           <button onClick={() => navigate('/events/list')} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -265,12 +280,12 @@ export default function EventsDetail() {
                                 }}>
                                   <div style={{
                                     width:'44px', height:'44px', borderRadius:'50%',
-                                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px',
+                                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px',
                                     background: isDone?'#22c55e':isCurrent?'#068BC9':'#e2e8f0',
                                     color:'white', fontWeight:800,
                                     boxShadow: isDone?'0 2px 8px rgba(34,197,94,0.3)':isCurrent?'0 4px 14px rgba(6,139,201,0.4)':'none'
                                   }}>
-                                    {isDone ? '✓' : i + 1}
+                                    {isDone ? '✓' : <span>{step.icon}</span>}
                                   </div>
                                   <p style={{ margin:0, fontSize:'12px', fontWeight:isCurrent?700:isDone?600:400, color:isDone?'#15803d':isCurrent?'#1e40af':'#94a3b8', textAlign:'center', lineHeight:'1.3' }}>{step.label}</p>
                                   {isCurrent && <p style={{ margin:0, fontSize:'10px', color:'#3b82f6', display:'flex', alignItems:'center', gap:'4px' }}><span style={{ width:'5px', height:'5px', borderRadius:'50%', background:'#3b82f6', display:'inline-block' }} /> In progress</p>}
@@ -381,6 +396,56 @@ export default function EventsDetail() {
           )}
 
           {/* FEEDBACK */}
+          {activeTab === 'design' && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-gray-700">Design</p>
+                {isAdmin && (
+                  <label className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg text-white cursor-pointer" style={{ backgroundColor: '#068BC9' }}>
+                    <MdUpload size={14} /> {detail.designImage ? 'Replace' : 'Upload Design'}
+                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden" onChange={e => {
+                      if (e.target.files[0]) {
+                        const fd = new FormData(); fd.append('file', e.target.files[0]);
+                        api.post(`/api/events/${id}/upload-design`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+                          .then(() => { setToast('Design uploaded'); fetchDetail(); })
+                          .catch(() => setToast('Upload failed'));
+                      }
+                    }} />
+                  </label>
+                )}
+              </div>
+              {detail.designImage ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl overflow-hidden border border-gray-100">
+                    {detail.designImage.match(/\.(jpg|jpeg|png)$/i) ? (
+                      <img src={detail.designImage.startsWith('http') ? detail.designImage : `${API_BASE_URL}${detail.designImage}`} alt="Design" style={{ width:'100%', display:'block' }} />
+                    ) : (
+                      <div className="p-4 bg-gray-50 text-center">
+                        <p className="text-sm text-gray-600">Design file uploaded</p>
+                      </div>
+                    )}
+                  </div>
+                  <a href={detail.designImage.startsWith('http') ? detail.designImage : `${API_BASE_URL}${detail.designImage}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium border border-gray-200 text-gray-700 hover:bg-gray-50">
+                    <MdDownload size={16} /> Download Design
+                  </a>
+                  {isAdmin && detail.workflowStatus !== 'design_approved' && (
+                    <button onClick={() => api.post(`/api/events/${id}/approve-design`).then(() => { setToast('Design approved!'); fetchDetail(); })}
+                      className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-white font-medium w-full justify-center" style={{ backgroundColor: '#22c55e' }}>
+                      ✓ Approve Design
+                    </button>
+                  )}
+                  {detail.workflowStatus === 'design_approved' && (
+                    <p className="text-sm text-green-600 font-medium text-center">✓ Design Approved</p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-400 mb-2">No design uploaded yet</p>
+                  <p className="text-xs text-gray-300">CRM will upload the approved design here</p>
+                </div>
+              )}
+            </div>
+          )}
           {activeTab === 'feedback' && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
               <p className="text-sm font-semibold text-gray-700 mb-4">Feedback</p>
