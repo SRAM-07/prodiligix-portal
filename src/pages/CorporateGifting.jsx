@@ -302,8 +302,12 @@ export default function CorporateGifting() {
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                           {order.expectedDeliveryDate ? order.expectedDeliveryDate.split('T')[0] : <span className="text-gray-400 italic">Pending</span>}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                          {order.deliveryDate ? order.deliveryDate.split('T')[0] : <span className="text-gray-400 italic">Pending</span>}
+                        <td className="px-4 py-3 text-xs whitespace-nowrap">
+                          {order.deliveryDate ? order.deliveryDate.split('T')[0] : order.workflowStatus === 'feedback_received' || order.workflowStatus === 'delivered' ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Delivered</span>
+                          ) : order.workflowStatus && order.workflowStatus !== 'requirement_submitted' ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{order.workflowStatus.replace(/_/g, ' ')}</span>
+                          ) : <span className="text-gray-400 italic">Pending</span>}
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           {podUrl ? (
