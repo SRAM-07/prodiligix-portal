@@ -61,8 +61,8 @@ export default function ClientLogisticsDashboard() {
   const statusBg = s => ({ 'Booked': '#e0f2fe', 'In Transit': '#dbeafe', 'Delivered': '#dcfce7', 'Cancelled': '#fee2e2', 'RTO': '#ffedd5' }[s] || '#f3f4f6');
 
   const handleRecharge = async () => {
-    if (!rechargeAmount || parseFloat(rechargeAmount) < 100) {
-      setRechargeToast('Minimum recharge amount is ₹100');
+    if (!rechargeAmount || parseFloat(rechargeAmount) < 1) {
+      setRechargeToast('Minimum recharge amount is ₹1');
       setTimeout(() => setRechargeToast(''), 3000);
       return;
     }
@@ -281,7 +281,7 @@ export default function ClientLogisticsDashboard() {
             <h2 className="text-base font-bold text-gray-800 mb-1">Recharge Wallet</h2>
             <p className="text-xs text-gray-400 mb-4">Pay securely via UPI, Card or Netbanking</p>
             <p className="text-xs text-gray-400 mb-1">Amount (₹) <span className="text-red-400">*</span></p>
-            <input type="number" placeholder="Min ₹100" value={rechargeAmount}
+            <input type="number" placeholder="Min ₹1" value={rechargeAmount}
               onChange={e => setRechargeAmount(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none mb-4" />
             <div className="flex gap-3">
