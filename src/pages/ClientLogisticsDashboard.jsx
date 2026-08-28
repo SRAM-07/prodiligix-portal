@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MdLocalShipping, MdInventory, MdCheckCircle, MdCancel, MdArrowForward, MdAdd, MdAccountBalanceWallet, MdFlightTakeoff, MdLoop } from 'react-icons/md';
 import { RadialBarChart, RadialBar, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 import ClientLayout from '../components/ClientLayout';
 
 const BRAND = '#068BC9';
@@ -11,6 +12,10 @@ export default function ClientLogisticsDashboard() {
   const navigate = useNavigate();
   const [shipments, setShipments] = useState([]);
   const [wallet, setWallet] = useState(null);
+  const [showRecharge, setShowRecharge] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState('');
+  const [rechargeLoading, setRechargeLoading] = useState(false);
+  const [rechargeToast, setRechargeToast] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +59,53 @@ export default function ClientLogisticsDashboard() {
 
   const statusColor = s => ({ 'Booked': '#068BC9', 'In Transit': '#1d4ed8', 'Delivered': '#22c55e', 'Cancelled': '#ef4444', 'RTO': '#f97316' }[s] || '#9ca3af');
   const statusBg = s => ({ 'Booked': '#e0f2fe', 'In Transit': '#dbeafe', 'Delivered': '#dcfce7', 'Cancelled': '#fee2e2', 'RTO': '#ffedd5' }[s] || '#f3f4f6');
+
+  const handleRecharge = async () => {
+    if (!rechargeAmount || parseFloat(rechargeAmount) < 100) {
+      setRechargeToast('Minimum recharge amount is ₹100');
+      setTimeout(() => setRechargeToast(''), 3000);
+      return;
+    }
+    setRechargeLoading(true);
+    try {
+      const u = getCurrentUser();
+      const res = await api.post('/api/payments/create-order', {
+        companyId: u?.companyId,
+        amount: parseFloat(rechargeAmount)
+      });
+      const { paymentSessionId, orderId } = res.data;
+
+      // Load Cashfree SDK and open checkout
+      const cashfree = await window.Cashfree({ mode: 'sandbox' });
+      cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
+      }).then(async (result) => {
+        if (result.error) {
+          setRechargeToast('Payment failed: ' + result.error.message);
+        } else {
+          // Verify payment
+          const verify = await api.get('/api/payments/verify/' + orderId);
+          if (verify.data.orderStatus === 'PAID') {
+            setRechargeToast('✅ Wallet recharged successfully!');
+            setShowRecharge(false);
+            setRechargeAmount('');
+            // Refresh wallet
+            const walletRes = await api.get('/api/wallet/' + u?.companyId).catch(() => null);
+            if (walletRes) setWallet(walletRes.data);
+          } else {
+            setRechargeToast('Payment status: ' + verify.data.orderStatus);
+          }
+        }
+        setTimeout(() => setRechargeToast(''), 4000);
+      });
+    } catch (err) {
+      setRechargeToast(err.response?.data?.error || 'Failed to initiate payment');
+      setTimeout(() => setRechargeToast(''), 3000);
+    } finally {
+      setRechargeLoading(false);
+    }
+  };
 
   return (
     <ClientLayout>
@@ -158,6 +210,11 @@ export default function ClientLogisticsDashboard() {
                   <div className="w-full bg-gray-100 rounded-full h-2">
                     <div className="h-2 rounded-full" style={{ backgroundColor: BRAND, width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
                   </div>
+                  <button onClick={() => setShowRecharge(true)}
+                    className="w-full py-2 rounded-lg text-white text-sm font-medium mt-2"
+                    style={{ backgroundColor: BRAND }}>
+                    + Recharge Wallet
+                  </button>
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">Wallet info unavailable</p>
