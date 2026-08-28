@@ -75,12 +75,22 @@ export default function ClientLogisticsDashboard() {
       });
       const { paymentSessionId, orderId } = res.data;
 
-      // Load Cashfree SDK and open checkout
-      const cashfree = await window.Cashfree({ mode: 'sandbox' });
-      cashfree.checkout({
+      // Load Cashfree SDK dynamically if not present
+      if (!window.Cashfree) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      const cashfree = window.Cashfree({ mode: "sandbox" });
+      const checkoutResult = await cashfree.checkout({
         paymentSessionId,
-        redirectTarget: '_modal',
-      }).then(async (result) => {
+        redirectTarget: "_modal",
+      });
+      (async (result) => {
         if (result.error) {
           setRechargeToast('Payment failed: ' + result.error.message);
         } else {
@@ -98,7 +108,7 @@ export default function ClientLogisticsDashboard() {
           }
         }
         setTimeout(() => setRechargeToast(''), 4000);
-      });
+      })(checkoutResult);
     } catch (err) {
       setRechargeToast(err.response?.data?.error || 'Failed to initiate payment');
       setTimeout(() => setRechargeToast(''), 3000);
