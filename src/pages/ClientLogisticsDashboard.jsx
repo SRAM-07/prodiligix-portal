@@ -91,7 +91,7 @@ export default function ClientLogisticsDashboard() {
           document.head.appendChild(script);
         });
       }
-      const cashfree = window.Cashfree({ mode: "sandbox" });
+      const cashfree = window.Cashfree({ mode: "production" });
       const checkoutResult = await cashfree.checkout({
         paymentSessionId,
         redirectTarget: "_modal",
