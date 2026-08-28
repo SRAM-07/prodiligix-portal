@@ -274,6 +274,33 @@ export default function ClientLogisticsDashboard() {
             </div>
           </div>
         </div>
+      {/* Recharge Modal */}
+      {showRecharge && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-base font-bold text-gray-800 mb-1">Recharge Wallet</h2>
+            <p className="text-xs text-gray-400 mb-4">Pay securely via UPI, Card or Netbanking</p>
+            <p className="text-xs text-gray-400 mb-1">Amount (₹) <span className="text-red-400">*</span></p>
+            <input type="number" placeholder="Min ₹100" value={rechargeAmount}
+              onChange={e => setRechargeAmount(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none mb-4" />
+            <div className="flex gap-3">
+              <button onClick={() => setShowRecharge(false)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50">Cancel</button>
+              <button onClick={handleRecharge} disabled={rechargeLoading}
+                className="flex-1 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-50"
+                style={{ backgroundColor: BRAND }}>
+                {rechargeLoading ? 'Processing...' : 'Pay Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {rechargeToast && (
+        <div className="fixed top-20 right-6 z-[300] bg-white border border-green-200 shadow-lg rounded-xl px-4 py-3">
+          <p className="text-sm font-medium" style={{ color: rechargeToast.includes('✅') ? '#22c55e' : '#ef4444' }}>{rechargeToast}</p>
+        </div>
+      )}
     </ClientLayout>
   );
 }
