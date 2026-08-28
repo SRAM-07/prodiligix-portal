@@ -69,8 +69,14 @@ export default function ClientLogisticsDashboard() {
     setRechargeLoading(true);
     try {
       const u = getCurrentUser();
+      if (!u?.companyId) {
+        setRechargeToast('Company not found. Please re-login.');
+        setTimeout(() => setRechargeToast(''), 3000);
+        setRechargeLoading(false);
+        return;
+      }
       const res = await api.post('/api/payments/create-order', {
-        companyId: u?.companyId,
+        companyId: u.companyId,
         amount: parseFloat(rechargeAmount)
       });
       const { paymentSessionId, orderId } = res.data;
@@ -110,7 +116,8 @@ export default function ClientLogisticsDashboard() {
         setTimeout(() => setRechargeToast(''), 4000);
       })(checkoutResult);
     } catch (err) {
-      setRechargeToast(err.response?.data?.error || 'Failed to initiate payment');
+      console.error('Recharge error:', err);
+      setRechargeToast(err.response?.data?.error || err.message || 'Failed to initiate payment');
       setTimeout(() => setRechargeToast(''), 3000);
     } finally {
       setRechargeLoading(false);
