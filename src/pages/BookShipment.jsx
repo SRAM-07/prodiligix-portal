@@ -24,6 +24,38 @@ const boxTypes = ['Corrugated Box', 'Wooden Box', 'Plastic Box', 'Envelope', 'Ot
 const dimensionUnits = ['cms', 'inch', 'feet'];
 const URGENT_OR_MANUAL_MODES = ['Air Urgent', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 
+
+const SHIPMENT_CATEGORIES = [
+  'Computers, Laptops and Accessories',
+  'Baby Care',
+  'Home and Kitchen',
+  'Handbags, Bags and Luggage',
+  'Health and Wellness',
+  'Beauty Products and Personal Care',
+  'Electronics and Appliances',
+  'BFSI',
+  'Books, Software and E-learning',
+  'Automotive',
+  'Apparel and Accessories',
+  'Watches, Eyewear and Jewellery',
+  'Gifts',
+  'Shoes and Footwear',
+  'Cells and Batteries',
+  'Grocery and Gourmet Food',
+  'Mobile Phone, Tablets and Accessories',
+  'Camera and Photos',
+  'Stationery and Office Products',
+  'Tools and Hardware',
+  'Industrial and Scientific Goods',
+  'Internal Documents',
+  'Movies, Music and Video Games',
+  'Musical Instruments',
+  'Pet Supplies',
+  'Sports and Outdoors',
+  'Toys and Games',
+  'Multi-category',
+];
+
 export default function BookShipment() {
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -54,6 +86,7 @@ export default function BookShipment() {
     actualWeight: '',
     noOfBoxes: 1,
     dimensionUnit: 'cms',
+    shipmentCategory: '',
     insurance: 'yes',
     packaging: 'no',
     manualRate: '',
@@ -186,6 +219,7 @@ export default function BookShipment() {
   const validate = () => {
     const newErrors = {};
     if (!form.pickupAddressId) newErrors.pickupAddressId = 'Pickup address is required';
+    if (!form.shipmentCategory) newErrors.shipmentCategory = 'Shipment category is required';
     if (!form.deliveryAddressId) newErrors.deliveryAddressId = 'Delivery address is required';
     if (!form.transportMode) newErrors.transportMode = 'Transport mode is required';
     if (!form.transporter) newErrors.transporter = 'Transporter is required';
@@ -454,6 +488,17 @@ export default function BookShipment() {
                   {shipmentDetails.map((s, i) => <option key={i}>{s}</option>)}
                 </select>
                 {errors.shipmentDetail && <p className="text-xs text-red-400 mt-1">{errors.shipmentDetail}</p>}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Shipment Category <span className="text-red-400">*</span></p>
+                <select
+                  value={form.shipmentCategory}
+                  onChange={e => handleChange('shipmentCategory', e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
+                  <option value="">Select Category</option>
+                  {SHIPMENT_CATEGORIES.map((c, i) => <option key={i}>{c}</option>)}
+                </select>
+                {errors.shipmentCategory && <p className="text-xs text-red-400 mt-1">{errors.shipmentCategory}</p>}
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Shipment Details Description <span className="text-red-400">*</span></p>
