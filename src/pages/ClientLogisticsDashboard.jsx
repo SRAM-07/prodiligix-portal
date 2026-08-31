@@ -227,11 +227,13 @@ export default function ClientLogisticsDashboard() {
                   <div className="w-full bg-gray-100 rounded-full h-2">
                     <div className="h-2 rounded-full" style={{ backgroundColor: BRAND, width: `${Math.min(100, (parseFloat(wallet.walletUsedAmount || 0) / parseFloat(wallet.totalRechargedAmount || 1)) * 100)}%` }} />
                   </div>
+                  {companyId !== 2 && (
                   <button onClick={() => setShowRecharge(true)}
                     className="w-full py-2 rounded-lg text-white text-sm font-medium mt-2"
                     style={{ backgroundColor: BRAND }}>
                     + Recharge Wallet
                   </button>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">Wallet info unavailable</p>
