@@ -168,6 +168,10 @@ export default function RateCalculator() {
       setError('Rate calculation is only available for Air/Surface mode with Delhivery or Bluedart. For other modes, please contact your CRM for a quote.');
       return;
     }
+    if (form.transportMode === 'Surface' && form.transporter === 'Bluedart') {
+      setError('Surface rates for Bluedart are not available. Please contact your CRM for a quote.');
+      return;
+    }
     setError('');
     setCalculating(true);
     try {
