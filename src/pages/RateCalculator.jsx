@@ -539,12 +539,23 @@ export default function RateCalculator() {
                   <p className="text-sm font-semibold text-gray-700 mb-3">Price Breakdown</p>
                   {calculated && result ? (
                     <div className="flex flex-col gap-3">
-                      {Object.entries(result)
-                        .filter(([key]) => !['total', 'weight_category', 'region_type'].includes(key))
-                        .map(([key, value]) => (
+                      {[
+                        { key: 'basic', label: 'Basic' },
+                        { key: 'base_charge', label: 'Basic' },
+                        { key: 'addl_charge', label: 'Additional Charge' },
+                        { key: 'docket', label: 'Docket' },
+                        { key: 'fuel', label: 'Fuel Surcharge' },
+                        { key: 'handling', label: 'Handling' },
+                        { key: 'oda_charge', label: 'ODA Charge' },
+                        { key: 'insurance (2% of the declared value)', label: 'Insurance (2%)' },
+                        { key: 'package', label: 'Packaging' },
+                        { key: 'fulfillment', label: 'Fulfillment Fee' },
+                        { key: 'gst (18%)', label: 'GST (18%)' },
+                      ].filter(({ key }) => result[key] !== undefined && parseFloat(result[key]) >= 0)
+                        .map(({ key, label }) => (
                           <div key={key} className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="text-sm font-medium text-gray-700">₹{parseFloat(value).toLocaleString()}</span>
+                            <span className="text-xs text-gray-500">{label}</span>
+                            <span className="text-sm font-medium text-gray-700">₹{parseFloat(result[key]).toLocaleString()}</span>
                           </div>
                         ))}
                       <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
