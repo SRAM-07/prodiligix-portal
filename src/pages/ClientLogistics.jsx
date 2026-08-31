@@ -103,11 +103,12 @@ export default function ClientLogistics() {
     return docs;
   };
 
-  if (loading) return (
+  if (loading || serviceLoading) return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center">
       <p className="text-gray-400 text-sm">Loading...</p>
     </div>
   );
+  if (!isEnabled('logistics')) return <SERVICE_NOT_AVAILABLE />;
 
   return (
     <ClientLayout>
