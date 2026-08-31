@@ -4,6 +4,8 @@ import { MdArrowForward, MdAdd, MdAccountBalanceWallet, MdDescription, MdCheckCi
 import { RadialBarChart, RadialBar, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import ClientLayout from '../components/ClientLayout';
+import { useCompanyServices } from '../hooks/useCompanyServices';
+import ServiceNotAvailable from '../components/ServiceNotAvailable';
 
 const BRAND = '#068BC9';
 
@@ -12,6 +14,8 @@ export default function ClientStampPaperDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState(null);
+  const { isEnabled, loading: serviceLoading } = useCompanyServices();
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => { fetchData(); }, []);
 
@@ -27,6 +31,10 @@ export default function ClientStampPaperDashboard() {
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
+
+  if (!serviceLoading && currentUser?.role === 'company_user' && !isEnabled('stampPaper')) {
+    return <ServiceNotAvailable serviceName="Stamp Paper Procurement" />;
+  }
 
   const stats = {
     total: orders.length,
