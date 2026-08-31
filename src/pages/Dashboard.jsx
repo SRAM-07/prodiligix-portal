@@ -74,7 +74,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const companyId = 1;
+        const companyId = user?.companyId || 0;
         const [statusRes, weeklyRes, shipmentsRes] = await Promise.all([
           api.get(`/api/dashboard/request-status-counts/${companyId}`),
           api.get(`/api/dashboard/weekly-by-service/${companyId}`),
