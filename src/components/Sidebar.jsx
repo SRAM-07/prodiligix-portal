@@ -66,8 +66,8 @@ function ProfileMenu({ expanded, navigate }) {
                 SR
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">{currentUser?.firstName} {currentUser?.lastName}</p>
-                <p className="text-xs text-gray-400">{currentUser?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                <p className="text-sm font-semibold text-gray-800">{getCurrentUser()?.firstName} {getCurrentUser()?.lastName}</p>
+                <p className="text-xs text-gray-400">{getCurrentUser()?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
               </div>
             </div>
           </div>
