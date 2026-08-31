@@ -326,7 +326,7 @@ export default function Logistics() {
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto w-full">
             <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-gray-100">
