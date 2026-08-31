@@ -319,15 +319,8 @@ export default function GiftingDetail() {
                 )}
               </div>
               {/* ProDiligix Branding Banner - only when completed */}
-              {allDone && <div style={{ marginTop:'24px', borderRadius:'16px', background:'linear-gradient(135deg, #068BC9 0%, #0a6fa0 50%, #054d6e 100%)', padding:'28px 32px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
-                  <img src={process.env.PUBLIC_URL + "/logo.png"} alt="ProDiligix" style={{ height:'48px', objectFit:'contain', filter:'brightness(0) invert(1)' }} />
-                  <div>
-                    <p style={{ margin:'0 0 4px', fontSize:'20px', fontWeight:900, color:'white', letterSpacing:'0.5px' }}>ProDiligix</p>
-                    <p style={{ margin:0, fontSize:'12px', color:'rgba(255,255,255,0.75)' }}>Technologies Pvt. Ltd.</p>
-                  </div>
-                </div>
-                <p style={{ margin:0, fontSize:'15px', fontWeight:600, color:'white', textAlign:'right' }}>
+              {allDone && <div style={{ marginTop:'24px', borderRadius:'16px', background:'linear-gradient(135deg, #068BC9 0%, #0a6fa0 50%, #054d6e 100%)', padding:'28px 32px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <p style={{ margin:0, fontSize:'18px', fontWeight:700, color:'white', textAlign:'center' }}>
                   Thank you for choosing ProDiligix!
                 </p>
               </div>}
