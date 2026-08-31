@@ -92,6 +92,19 @@ export default function GiftingDetail() {
   };
 
   const updateWorkflowStatus = async (status) => {
+    // Validation checks before advancing
+    if (status === 'sample_approved' && !detail?.sampleImage) {
+      setToast('Please upload a sample image before approving the sample.');
+      return;
+    }
+    if (status === 'production' && !detail?.poFile) {
+      setToast('Please upload the Purchase Order (PO) before starting production.');
+      return;
+    }
+    if (status === 'dispatched' && (!dispatchDetails || !trackingNumber)) {
+      setToast('Please fill in dispatch details and tracking number before marking as dispatched.');
+      return;
+    }
     try {
       await api.patch(`/api/corporate-giftings/${id}/workflow-status`, { workflowStatus: status });
       const newIndex = WORKFLOW_STEPS.findIndex(s => s.key === status);
