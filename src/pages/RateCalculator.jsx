@@ -161,6 +161,13 @@ export default function RateCalculator() {
       setError('Please fill Pickup/Delivery Pincode, Transport Mode and Transporter');
       return;
     }
+    // Check if mode supports rate calculation
+    const RATE_SUPPORTED_MODES = ['Air', 'Surface'];
+    const RATE_SUPPORTED_PROVIDERS = ['Delhivery', 'Bluedart'];
+    if (!RATE_SUPPORTED_MODES.includes(form.transportMode) || !RATE_SUPPORTED_PROVIDERS.includes(form.transporter)) {
+      setError('Rate calculation is only available for Air/Surface mode with Delhivery or Bluedart. For other modes, please contact your CRM for a quote.');
+      return;
+    }
     setError('');
     setCalculating(true);
     try {
