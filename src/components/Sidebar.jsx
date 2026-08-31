@@ -101,8 +101,8 @@ function ProfileMenu({ expanded, navigate }) {
         </div>
         {expanded && (
           <div className="ml-3 overflow-hidden whitespace-nowrap flex-1">
-            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{currentUser?.firstName} {currentUser?.lastName}</p>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>{currentUser?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{getCurrentUser()?.firstName} {getCurrentUser()?.lastName}</p>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>{getCurrentUser()?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
           </div>
         )}
         {expanded && (
