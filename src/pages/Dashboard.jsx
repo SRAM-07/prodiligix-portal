@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
   MdLocalShipping, MdCheckCircle, MdWarning, MdPending,
-  MdTrendingUp, MdTrendingDown
+
 } from 'react-icons/md';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -140,10 +140,10 @@ export default function Dashboard() {
   const exceptions = shipmentCounts.exceptions || 0;
 
   const statCards = [
-    { label: 'Total Orders', value: totalOrders, icon: <MdLocalShipping size={22} />, color: '#068BC9', bg: '#e0f2fe', delta: '+12%', up: true },
-    { label: 'Delivered', value: delivered, icon: <MdCheckCircle size={22} />, color: '#22c55e', bg: '#dcfce7', delta: '+8%', up: true },
-    { label: 'Pending', value: pending, icon: <MdPending size={22} />, color: '#f97316', bg: '#ffedd5', delta: '-3%', up: false },
-    { label: 'Exceptions', value: exceptions, icon: <MdWarning size={22} />, color: '#ef4444', bg: '#fee2e2', delta: '+2%', up: false },
+    { label: 'Total Orders', value: totalOrders, icon: <MdLocalShipping size={22} />, color: '#068BC9', bg: '#e0f2fe' },
+    { label: 'Delivered', value: delivered, icon: <MdCheckCircle size={22} />, color: '#22c55e', bg: '#dcfce7' },
+    { label: 'Pending', value: pending, icon: <MdPending size={22} />, color: '#f97316', bg: '#ffedd5' },
+    { label: 'Exceptions', value: exceptions, icon: <MdWarning size={22} />, color: '#ef4444', bg: '#fee2e2' },
   ];
 
   const actionItems = [
@@ -253,10 +253,6 @@ export default function Dashboard() {
                     style={{ backgroundColor: card.bg, color: card.color }}>
                     {card.icon}
                   </div>
-                  <span className={`text-xs font-semibold flex items-center gap-0.5 px-2 py-0.5 rounded-full ${card.up ? 'text-green-600 bg-green-50' : 'text-red-500 bg-red-50'}`}>
-                    {card.up ? <MdTrendingUp size={12} /> : <MdTrendingDown size={12} />}
-                    {card.delta}
-                  </span>
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{card.value}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{card.label}</p>
