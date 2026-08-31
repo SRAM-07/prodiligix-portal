@@ -230,7 +230,7 @@ export default function Wallet() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        {['ID', 'Balance', 'Used', 'Expiry Date', 'Status'].map((col, i) => (
+                        {['ID', 'Balance', 'Used', 'Expiry Date', 'Transaction ID', 'Status'].map((col, i) => (
                           <th key={i} className="text-left text-xs text-gray-400 font-medium px-5 py-3">{col}</th>
                         ))}
                       </tr>
@@ -238,7 +238,7 @@ export default function Wallet() {
                     <tbody>
                       {wallets.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-gray-400 text-sm">
+                          <td colSpan={6} className="text-center py-8 text-gray-400 text-sm">
                             No wallets found for this company
                           </td>
                         </tr>
@@ -253,6 +253,9 @@ export default function Wallet() {
                           </td>
                           <td className="px-5 py-3 text-sm text-gray-600">
                             {wallet.rechargedDate ? wallet.rechargedDate.split('T')[0] : '—'}
+                          </td>
+                          <td className="px-5 py-3 text-sm text-gray-600">
+                            {wallet.transactionNumber || '—'}
                           </td>
                           <td className="px-5 py-3">
                             <span className="text-xs font-medium px-2 py-1 rounded-full"
