@@ -102,6 +102,19 @@ export default function EventsDetail() {
   };
 
   const updateWorkflowStatus = async (status) => {
+    // Validation checks before advancing
+    if (status === 'under_printing' && !detail?.designImage) {
+      setToast('Please upload the design before moving to printing.');
+      return;
+    }
+    if (status === 'design_approved' && !detail?.designImage) {
+      setToast('Please upload the design before approving it.');
+      return;
+    }
+    if (status === 'under_printing' && !detail?.poFile) {
+      setToast('Please upload the Purchase Order (PO) before starting printing.');
+      return;
+    }
     try {
       await api.patch(`/api/events/${id}/workflow-status`, { workflowStatus: status });
       const newIndex = WORKFLOW_STEPS.findIndex(s => s.key === status);
