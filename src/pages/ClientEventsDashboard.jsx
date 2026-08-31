@@ -40,6 +40,11 @@ export default function ClientEventsDashboard() {
   const statusColor = s => ({ 'Under Review': '#f59e0b', 'In Progress': '#068BC9', 'Completed': '#22c55e', 'Cancelled': '#ef4444' }[s] || '#9ca3af');
   const statusBg = s => ({ 'Under Review': '#fef3c7', 'In Progress': '#e0f2fe', 'Completed': '#dcfce7', 'Cancelled': '#fee2e2' }[s] || '#f3f4f6');
 
+  if (!serviceLoading && user?.role === 'company_user' && !isEnabled('events')) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <div className="text-center"><p className="text-4xl mb-4">🔒</p><h2 className="text-lg font-bold text-gray-800 mb-2">Service Not Available</h2><p className="text-sm text-gray-400">This service is not enabled for your company.</p></div>
+    </div>
+  );
   return (
     <ClientLayout>
       <div className="px-6 py-5 border-b border-gray-100 bg-white flex items-center justify-between">

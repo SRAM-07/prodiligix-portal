@@ -40,6 +40,11 @@ export default function ClientGiftingDashboard() {
   const statusColor = s => ({ 'Pending': '#f59e0b', 'Initialized': '#068BC9', 'Accepted': '#22c55e', 'Rejected': '#ef4444' }[s?.quotationStatus] || '#9ca3af');
   const statusBg = s => ({ 'Pending': '#fef3c7', 'Initialized': '#e0f2fe', 'Accepted': '#dcfce7', 'Rejected': '#fee2e2' }[s?.quotationStatus] || '#f3f4f6');
 
+  if (!serviceLoading && user?.role === 'company_user' && !isEnabled('gifting')) return (
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+      <div className="text-center"><p className="text-4xl mb-4">🔒</p><h2 className="text-lg font-bold text-gray-800 mb-2">Service Not Available</h2><p className="text-sm text-gray-400">This service is not enabled for your company.</p></div>
+    </div>
+  );
   return (
     <ClientLayout>
       <div className="px-6 py-5 border-b border-gray-100 bg-white flex items-center justify-between">
