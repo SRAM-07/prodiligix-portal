@@ -14,6 +14,7 @@ export default function Wallet() {
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creditAmount, setCreditAmount] = useState('');
+  const [creditTransactionId, setCreditTransactionId] = useState('');
   const [creditSubmitting, setCreditSubmitting] = useState(false);
   const [newWalletAmount, setNewWalletAmount] = useState('');
   const [newWalletExpiry, setNewWalletExpiry] = useState('');
@@ -66,7 +67,7 @@ export default function Wallet() {
     try {
       await api.post('/api/wallet', {
         companyId: parseInt(selectedCompany),
-        transactionNumber: 'TXN-' + Date.now(),
+        transactionNumber: creditTransactionId || 'TXN-' + Date.now(),
         totalRechargedAmount: parseFloat(creditAmount),
         walletUsedAmount: 0,
         rechargedDate: new Date().toISOString().split('T')[0],
@@ -74,6 +75,7 @@ export default function Wallet() {
       });
       setToast(`₹${creditAmount} credited successfully`);
       setCreditAmount('');
+      setCreditTransactionId('');
       setShowCreditDialog(false);
       fetchWalletData(selectedCompany);
     } catch (err) {
@@ -89,7 +91,7 @@ export default function Wallet() {
     try {
       await api.post('/api/wallet', {
         companyId: parseInt(selectedCompany),
-        transactionNumber: 'TXN-' + Date.now(),
+        transactionNumber: creditTransactionId || 'TXN-' + Date.now(),
         totalRechargedAmount: parseFloat(newWalletAmount),
         walletUsedAmount: 0,
         rechargedDate: newWalletExpiry || new Date().toISOString().split('T')[0],
@@ -283,6 +285,13 @@ export default function Wallet() {
               placeholder="Enter amount"
               value={creditAmount}
               onChange={e => setCreditAmount(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none mb-3" />
+            <p className="text-xs text-gray-400 mb-1">Transaction ID / Reference No.</p>
+            <input
+              type="text"
+              placeholder="e.g. NEFT/UPI reference number"
+              value={creditTransactionId}
+              onChange={e => setCreditTransactionId(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none mb-4" />
             <div className="flex gap-3">
               <button onClick={() => setShowCreditDialog(false)}
