@@ -20,7 +20,7 @@ export default function ClientStampPaperDashboard() {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
       const [stampsRes, walletRes] = await Promise.all([
         api.get('/api/stamp-paper'),
-        u?.companyId ? api.get(`/api/wallet/${u.companyId}`).catch(() => null) : Promise.resolve(null)
+        u?.companyId ? api.get(`/api/wallet/balance/${u.companyId}`).catch(() => null) : Promise.resolve(null)
       ]);
       setOrders(stampsRes.data || []);
       if (walletRes) setWallet(walletRes.data);

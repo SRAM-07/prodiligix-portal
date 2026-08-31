@@ -27,7 +27,7 @@ export default function ClientLogisticsDashboard() {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
       const [shipmentsRes, walletRes] = await Promise.all([
         api.get('/api/shipments'),
-        u?.companyId ? api.get(`/api/wallet/${u.companyId}`).catch(() => null) : Promise.resolve(null)
+        u?.companyId ? api.get(`/api/wallet/balance/${u.companyId}`).catch(() => null) : Promise.resolve(null)
       ]);
       setShipments(shipmentsRes.data || []);
       if (walletRes) setWallet(walletRes.data);
@@ -107,7 +107,7 @@ export default function ClientLogisticsDashboard() {
             setShowRecharge(false);
             setRechargeAmount('');
             // Refresh wallet
-            const walletRes = await api.get('/api/wallet/' + u?.companyId).catch(() => null);
+            const walletRes = await api.get(`/api/wallet/balance/${u?.companyId}`).catch(() => null);
             if (walletRes) setWallet(walletRes.data);
           } else {
             setRechargeToast('Payment status: ' + verify.data.orderStatus);
