@@ -504,9 +504,26 @@ export default function OrderDetail() {
                       <MdDownload size={20} style={{ color: '#068BC9' }}/>
                     </button>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
-                      <p className="text-sm text-gray-400">No label uploaded yet</p>
-                    </div>
+                    <label className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                      <MdUpload size={24} className="text-gray-400" />
+                      <p className="text-sm text-gray-400">Upload Shipment Label</p>
+                      <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={async e => {
+                        const file = e.target.files[0]; if (!file) return;
+                        const fd = new FormData(); fd.append('file', file);
+                        try { await api.post(`/api/shipments/${shipment.id}/upload-label`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); setToast('Label uploaded'); fetchAll(); } catch { setToast('Upload failed'); }
+                      }} />
+                    </label>
+                  )}
+                  {shipment.shipmentWithLabel && (
+                    <label className="border border-dashed border-gray-200 rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors mt-1">
+                      <MdUpload size={16} className="text-gray-400" />
+                      <p className="text-xs text-gray-400">Re-upload label</p>
+                      <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={async e => {
+                        const file = e.target.files[0]; if (!file) return;
+                        const fd = new FormData(); fd.append('file', file);
+                        try { await api.post(`/api/shipments/${shipment.id}/upload-label`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); setToast('Label re-uploaded'); fetchAll(); } catch { setToast('Upload failed'); }
+                      }} />
+                    </label>
                   )}
 
                   {shipment.shipmentAwbNumber && (
