@@ -4,10 +4,14 @@ import { MdCalculate, MdRefresh, MdAdd, MdDelete } from 'react-icons/md';
 import api from '../services/api';
 import { getCurrentUser } from '../services/authService';
 
-const transportModes = ['Air', 'Surface'];
+const transportModes = ['Air', 'Air Urgent', 'Surface', 'Surface Urgent', 'PTL (Part Truck Load)', 'FTL (FullTruckLoad)'];
 const transporterOptions = {
-  Surface: ['Delhivery', 'Bluedart'],
-  Air: ['Delhivery', 'Bluedart', 'Indigo', 'Air India', 'Akasa Air', 'Royal King Courier Services'],
+  'Air': ['Delhivery', 'Bluedart'],
+  'Air Urgent': ['Indigo', 'Akasa Air', 'Air India', 'Bluedart'],
+  'Surface': ['Delhivery', 'Bluedart', 'ProDiligix'],
+  'Surface Urgent': ['ProDiligix'],
+  'PTL (Part Truck Load)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
+  'FTL (FullTruckLoad)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
 };
 const boxTypeOptions = ['Flyer', 'Envelope Cover', 'Corrugated Box', 'Wooden Box', 'Other'];
 const dimensionUnits = ['cm', 'inch', 'feet'];
