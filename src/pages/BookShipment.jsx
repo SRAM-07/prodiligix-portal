@@ -164,10 +164,10 @@ export default function BookShipment() {
     return total + v;
   }, 0).toFixed(2);
 
-  const scanWeight = Math.max(
+  const scanWeight = Math.ceil(Math.max(
     parseFloat(form.actualWeight) || 0,
     parseFloat(volumetricWeight) || 0
-  ).toFixed(2);
+  )).toFixed(2);
 
   const rateType = parseFloat(scanWeight) > 10 ? 'B2B' : 'B2C';
 

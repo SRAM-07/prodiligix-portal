@@ -145,7 +145,7 @@ export default function RateCalculator() {
     return total + (l * w * h * c) / divisor;
   }, 0).toFixed(2);
 
-  const scanWeight = Math.max(parseFloat(form.actualWeight) || 0, parseFloat(volumetricWeight) || 0).toFixed(2);
+  const scanWeight = Math.ceil(Math.max(parseFloat(form.actualWeight) || 0, parseFloat(volumetricWeight) || 0)).toFixed(2);
   const rateType = parseFloat(scanWeight) > 20 ? 'B2B Surface' : 'B2C';
 
   const handleCalculate = async () => {
