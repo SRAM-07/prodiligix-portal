@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SmartSidebar from '../components/SmartSidebar';
 import { MdCalculate, MdRefresh, MdAdd, MdDelete } from 'react-icons/md';
 import api from '../services/api';
+import { getCurrentUser } from '../services/authService';
 
 const transportModes = ['Air', 'Surface'];
 const transporterOptions = {
@@ -48,18 +49,26 @@ export default function RateCalculator() {
   const [result, setResult] = useState(null);
   const [calculated, setCalculated] = useState(false);
 
+  const currentUser = getCurrentUser();
+  const isClient = currentUser?.role === 'company_user' || currentUser?.role === 'company_admin';
+
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const res = await api.get('/api/companies');
-        setCompanies(res.data);
-      } catch (err) {
-        console.error('Failed to fetch companies:', err);
-      } finally {
-        setLoadingCompanies(false);
-      }
-    };
-    fetchCompanies();
+    if (isClient && currentUser?.companyId) {
+      setForm(prev => ({ ...prev, companyId: currentUser.companyId.toString() }));
+      setLoadingCompanies(false);
+    } else {
+      const fetchCompanies = async () => {
+        try {
+          const res = await api.get('/api/companies');
+          setCompanies(res.data);
+        } catch (err) {
+          console.error('Failed to fetch companies:', err);
+        } finally {
+          setLoadingCompanies(false);
+        }
+      };
+      fetchCompanies();
+    }
   }, []);
 
   const boxesUsed = boxGroups.reduce((sum, g) => sum + Number(g.count || 0), 0);
@@ -221,10 +230,11 @@ export default function RateCalculator() {
 
               {/* Company */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Select Company</p>
+                {!isClient && <p className="text-sm font-semibold text-gray-700 mb-3">Select Company</p>}
                 <select
                   value={form.companyId}
                   onChange={e => handleChange('companyId', e.target.value)}
+                  style={{ display: isClient ? 'none' : 'block' }}
                   disabled={loadingCompanies}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
                   <option value="">{loadingCompanies ? 'Loading companies...' : 'Select Company'}</option>
