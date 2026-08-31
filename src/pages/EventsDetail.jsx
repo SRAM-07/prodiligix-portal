@@ -12,17 +12,17 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE_URL}${path}`) : null;
 
 const STEP_MESSAGES = {
-  event_submitted: "Your event request has been submitted. Our team will review it shortly. — ProDiligix Team",
-  under_review: "Our team is reviewing your event requirements. — ProDiligix Team",
-  quotation_shared: "A quotation has been shared with you. Please review it. — ProDiligix Team",
-  quotation_accepted: "The quotation has been accepted. The purchase order is now awaited. — ProDiligix Team",
-  awaiting_po: "Waiting for the purchase order to be submitted. — ProDiligix Team",
+  event_submitted: "Your event request has been submitted. Our team will review it shortly.",
+  under_review: "Our team is reviewing your event requirements.",
+  quotation_shared: "A quotation has been shared with you. Please review it.",
+  quotation_accepted: "The quotation has been accepted. The purchase order is now awaited.",
+  awaiting_po: "Waiting for the purchase order to be submitted.",
   design_approved: "The event design has been approved by ProDiligix Team.",
   under_printing: "Materials are currently being printed by ProDiligix Team.",
   setup_in_progress: "Event setup is currently in progress by ProDiligix Team.",
   event_execution: "The event is currently being executed by ProDiligix Team.",
   completed: "The event has been completed successfully by ProDiligix Team.",
-  feedback_received: "Thank you for your feedback! — ProDiligix Team",
+  feedback_received: "Thank you for your feedback!",
 };
 
 const WORKFLOW_STEPS = [

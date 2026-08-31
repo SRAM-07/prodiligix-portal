@@ -12,17 +12,17 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const fullFileUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE_URL}${path}`) : null;
 
 const STEP_MESSAGES = {
-  requirement_submitted: "Your gifting requirement has been submitted. Our team will review it shortly. — ProDiligix Team",
-  under_review: "Our team is reviewing your gifting requirements. — ProDiligix Team",
-  quotation_shared: "A quotation has been shared with you. Please review it. — ProDiligix Team",
-  quotation_accepted: "The quotation has been accepted. The purchase order is now awaited. — ProDiligix Team",
-  awaiting_po: "Waiting for the purchase order to be submitted. — ProDiligix Team",
-  sample_approved: "The sample has been approved. Production will begin shortly. — ProDiligix Team",
+  requirement_submitted: "Your gifting requirement has been submitted. Our team will review it shortly.",
+  under_review: "Our team is reviewing your gifting requirements.",
+  quotation_shared: "A quotation has been shared with you. Please review it.",
+  quotation_accepted: "The quotation has been accepted. The purchase order is now awaited.",
+  awaiting_po: "Waiting for the purchase order to be submitted.",
+  sample_approved: "The sample has been approved. Production will begin shortly.",
   production: "Your gifting items are currently in production by ProDiligix Team.",
   quality_check: "Items are undergoing quality check by ProDiligix Team.",
   dispatched: "Your order has been dispatched by ProDiligix Team.",
-  delivered: "Your order has been delivered successfully. — ProDiligix Team",
-  feedback_received: "Thank you for your feedback! — ProDiligix Team",
+  delivered: "Your order has been delivered successfully.",
+  feedback_received: "Thank you for your feedback!",
 };
 
 const WORKFLOW_STEPS = [
