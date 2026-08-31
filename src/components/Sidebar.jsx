@@ -63,7 +63,7 @@ function ProfileMenu({ expanded, navigate }) {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                 style={{ backgroundColor: '#068BC9' }}>
-                SR
+                {(getCurrentUser()?.firstName?.[0] || "") + (getCurrentUser()?.lastName?.[0] || "")}
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">{getCurrentUser()?.firstName} {getCurrentUser()?.lastName}</p>
@@ -97,7 +97,7 @@ function ProfileMenu({ expanded, navigate }) {
         <div
           className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
           style={{ backgroundColor: '#068BC9' }}>
-          SR
+          {(getCurrentUser()?.firstName?.[0] || "") + (getCurrentUser()?.lastName?.[0] || "")}
         </div>
         {expanded && (
           <div className="ml-3 overflow-hidden whitespace-nowrap flex-1">
