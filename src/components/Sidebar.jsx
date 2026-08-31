@@ -66,8 +66,8 @@ function ProfileMenu({ expanded, navigate }) {
                 SR
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Sriram M</p>
-                <p className="text-xs text-gray-400">Technical Lead</p>
+                <p className="text-sm font-semibold text-gray-800">{currentUser?.firstName} {currentUser?.lastName}</p>
+                <p className="text-xs text-gray-400">{currentUser?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
               </div>
             </div>
           </div>
@@ -101,8 +101,8 @@ function ProfileMenu({ expanded, navigate }) {
         </div>
         {expanded && (
           <div className="ml-3 overflow-hidden whitespace-nowrap flex-1">
-            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>Sriram M</p>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>Technical Lead</p>
+            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{currentUser?.firstName} {currentUser?.lastName}</p>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>{currentUser?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
           </div>
         )}
         {expanded && (
