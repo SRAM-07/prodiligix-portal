@@ -231,10 +231,14 @@ export default function RateCalculator() {
               {/* Company */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                 <p className="text-sm font-semibold text-gray-700 mb-3">Select Company</p>
+                {isClient ? (
+                  <input type="text" disabled
+                    value={currentUser?.firstName + " " + currentUser?.lastName}
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-500 outline-none cursor-not-allowed" />
+                ) : (
                 <select
                   value={form.companyId}
-                  onChange={e => !isClient && handleChange('companyId', e.target.value)}
-                  disabled={isClient}
+                  onChange={e => handleChange('companyId', e.target.value)}
                   disabled={loadingCompanies}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none">
                   <option value="">{loadingCompanies ? 'Loading companies...' : 'Select Company'}</option>
@@ -242,6 +246,7 @@ export default function RateCalculator() {
                     <option key={c.id} value={c.id}>{c.businessName}</option>
                   ))}
                 </select>
+                )}
               </div>
 
               {/* Main form */}
