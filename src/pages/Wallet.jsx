@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { MdRefresh, MdAdd, MdAccountBalanceWallet, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
+import { MdRefresh, MdAdd, MdAccountBalanceWallet, MdArrowUpward, MdArrowDownward, MdReceiptLong } from 'react-icons/md';
 import api from '../services/api';
 
 export default function Wallet() {
+  const navigate = useNavigate();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
@@ -211,6 +213,13 @@ export default function Wallet() {
                   style={{ backgroundColor: '#22c55e' }}>
                   <MdArrowUpward size={16} />
                   Top Up Wallet
+                </button>
+                <button
+                  onClick={() => navigate(`/wallet/ledger?company=${selectedCompany}`)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border"
+                  style={{ color: '#8b5cf6', borderColor: '#8b5cf6' }}>
+                  <MdReceiptLong size={16} />
+                  View Ledger
                 </button>
                 <button
                   onClick={() => setShowCreateDialog(true)}

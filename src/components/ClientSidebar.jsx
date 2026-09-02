@@ -6,7 +6,7 @@ import {
   MdDashboard, MdLocalShipping, MdDescription,
   MdCardGiftcard, MdEvent, MdComputer,
   MdBarChart, MdUpload, MdLogout
-} from 'react-icons/md';
+, MdReceiptLong } from 'react-icons/md';
 
 const serviceMenus = {
   dashboard: [

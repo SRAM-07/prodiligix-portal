@@ -119,6 +119,7 @@ export default function Sidebar({ onToggle }) {
   const [expanded, setExpanded] = useState(false);
   const currentUser = getCurrentUser();
   const isSuperAdmin = currentUser?.role === 'super_admin';
+  const isCRM = currentUser?.role === 'crm_user';
   const sections = isSuperAdmin
     ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdBusiness size={20}/>, label: 'Companies', path: '/companies' },
           { icon: <MdLocationOn size={20}/>, label: 'Addresses', path: '/addresses' },
@@ -127,6 +128,8 @@ export default function Sidebar({ onToggle }) {
           { icon: <MdSettings size={20}/>, label: 'Map Services', path: '/map-services' },
           { icon: <MdFactory size={20}/>, label: 'Plants', path: '/plants' },
           { icon: <MdReceipt size={20}/>, label: 'Purchase Orders', path: '/purchase-orders' }] }]
+    : isCRM
+    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdAccountBalanceWallet size={20}/>, label: 'Wallet Ledger', path: '/wallet/ledger' }] }]
     : menuSections;
   const navigate = useNavigate();
   const location = useLocation();

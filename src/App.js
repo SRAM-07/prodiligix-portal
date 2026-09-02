@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getCurrentUser } from './services/authService';
+import WalletLedger from './pages/WalletLedger';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Logistics from './pages/Logistics';
@@ -246,6 +247,7 @@ function App() {
             <BulkUploadInstructions />
           </ProtectedRoute>
         } />
+        <Route path="/wallet/ledger" element={<ProtectedRoute><WalletLedger /></ProtectedRoute>} />
         <Route path="/client/reports" element={
           <ProtectedRoute allowedRoles={CLIENT_ROLES}>
             <Reports />
