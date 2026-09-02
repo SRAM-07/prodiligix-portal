@@ -140,12 +140,15 @@ export default function Reports() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
+        const u = getCurrentUser();
+        const cId = u?.companyId;
+        const isClient = u?.role === 'company_user' || u?.role === 'company_admin';
         const [logisticsRes, stampRes, giftingRes, eventsRes, itRes] = await Promise.all([
-          api.get('/api/shipments'),
-          api.get('/api/stamp-paper'),
-          api.get('/api/corporate-giftings'),
-          api.get('/api/events'),
-          api.get('/api/it-solutions'),
+          isClient ? api.get(`/api/shipments/company/${cId}`) : api.get('/api/shipments'),
+          isClient ? api.get(`/api/stamp-paper/company/${cId}`) : api.get('/api/stamp-paper'),
+          isClient ? api.get(`/api/corporate-giftings/company/${cId}`) : api.get('/api/corporate-giftings'),
+          isClient ? api.get(`/api/events/company/${cId}`) : api.get('/api/events'),
+          isClient ? api.get(`/api/it-solutions/company/${cId}`) : api.get('/api/it-solutions'),
         ]);
         setLogisticsData(logisticsRes.data);
         setStampData(stampRes.data);
@@ -178,7 +181,7 @@ export default function Reports() {
       result = result.filter(r => (r.status || r.deliveryStatus || r.workflowStatus || '').toLowerCase() === filterStatus.toLowerCase());
     }
     if (activeFilter === 'Company' && filterCompany) {
-      result = result.filter(r => (r.companyId || r.businessName || r.companyName || '').toString().toLowerCase().includes(filterCompany.toLowerCase()));
+      result = result.filter(r => (r.companyName || r.businessName || r.companyId || '').toString().toLowerCase().includes(filterCompany.toLowerCase()));
     }
     if (activeFilter === 'Latest') {
       result = result.slice(-50).reverse();
@@ -195,7 +198,7 @@ export default function Reports() {
         const row = {
           'Created Date': r.createdAt ? r.createdAt.split('T')[0] : '',
           'Service Request ID': r.serviceRequestId,
-          'Company ID': r.companyId,
+          'Company': r.companyId,
           'Modes': r.modes,
           'Transport Mode': r.transportMode,
           'Delivery Partner': r.transporter,
@@ -295,7 +298,7 @@ export default function Reports() {
 
   const renderLogistics = () => {
     const filtered = applyFilters(logisticsData, 'createdAt');
-    const baseCols = ['Created Date', 'Service Request ID', 'Company ID', 'Modes', 'Transport Mode',
+    const baseCols = ['Created Date', 'Service Request ID', 'Company', 'Modes', 'Transport Mode',
       'Delivery Partner', 'Delivery Status', 'Shipment Detail', 'Declared Value',
       'Actual Weight', 'Scan Weight', 'No. of Boxes', 'AWB Number'];
     const restrictedCols = ['Insurance Required', 'Package Required'];
@@ -321,7 +324,7 @@ export default function Reports() {
                 <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.createdAt ? r.createdAt.split('T')[0] : '—'}</td>
                   <td className="px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: '#068BC9' }}>{r.serviceRequestId}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.companyId ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.companyName ?? r.companyId ?? '—'}</td>
                   <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap capitalize">{r.modes || '—'}</td>
                   <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transportMode || '—'}</td>
                   <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transporter || '—'}</td>

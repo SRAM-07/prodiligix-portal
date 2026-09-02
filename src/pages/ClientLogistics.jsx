@@ -227,13 +227,13 @@ export default function ClientLogistics() {
             <MdRefresh size={18} className="text-gray-400" />
           </button>
 
-          <button
+          {user?.role !== 'company_admin' && <button
             onClick={() => navigate('/client/logistics/book')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
             style={{ backgroundColor: '#22c55e' }}>
             <MdAdd size={18} />
             + Book a Shipment
-          </button>
+          </button>}
         </div>
 
         {/* Table */}

@@ -59,11 +59,11 @@ export default function ClientStampPaperDashboard() {
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Services</p>
           <h1 className="text-xl font-bold text-gray-800">Stamp Paper Dashboard</h1>
         </div>
-        <button onClick={() => navigate('/stamp-paper/new')}
+        {currentUser?.role !== 'company_admin' && <button onClick={() => navigate('/stamp-paper/new')}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm"
           style={{ backgroundColor: BRAND }}>
           <MdAdd size={18} /> New Request
-        </button>
+        </button>}
       </div>
 
       <div className="p-6 space-y-6">
@@ -143,10 +143,6 @@ export default function ClientStampPaperDashboard() {
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-400">Total Recharged</span>
                     <span className="font-medium text-gray-700">₹{parseFloat(wallet.totalRechargedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Total Used</span>
-                    <span className="font-medium text-gray-700">₹{parseFloat(wallet.walletUsedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-400">Stamp Paper Spend</span>

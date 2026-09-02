@@ -60,7 +60,7 @@ export default function BookWithCarrierDialog({ shipment, onClose, onSuccess }) 
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Pickup Location</p>
-                  <p className="text-sm font-medium text-gray-700">Rapido Office</p>
+                  <p className="text-sm font-medium text-gray-700">{shipment.modes === "reverse" || shipment.modes === "pointtopoint" ? "Customer Address" : "Rapido Office"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Transport Mode</p>

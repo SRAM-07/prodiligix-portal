@@ -104,7 +104,7 @@ export default function ClientSidebar({ expanded, setExpanded }) {
       </div>
 
       <nav className="flex-1 py-4 flex flex-col gap-1 px-2 overflow-y-auto">
-        {menuItems.map((item, i) => (
+        {menuItems.filter(item => !(user?.role === 'company_admin' && item.path === '/client/bulk-upload')).map((item, i) => (
           <React.Fragment key={i}>
             {item.section && expanded && (
               <p className="text-gray-500 text-xs px-3 pt-3 pb-1 uppercase tracking-wider">

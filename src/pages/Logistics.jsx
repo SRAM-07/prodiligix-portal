@@ -142,7 +142,7 @@ export default function Logistics() {
   }
 
   const columns = [
-    'Service Request ID', 'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
+    'Service Request ID', 'Company', 'Pickup Address', 'Delivery Address', 'Transport Mode', 'Shipment Detail',
     'Declared Value', 'Challan No.', 'Boxes', 'Rate Type', 'Final Rate',
     'AWB Number', 'Delivery Partner', 'Status', 'Created Date', 'Delivery Date',
     'Expected Delivery Date', 'Docs', 'Email Label'
@@ -357,8 +357,9 @@ export default function Logistics() {
                           {order.serviceRequestId}
                         </td>
 
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.pickupAddressId ?? 'N/A'}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryAddressId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap font-medium" style={{color:"#068BC9"}}>{order.companyName ?? order.companyId ?? '—'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.pickupCity ?? order.pickupAddressId ?? 'N/A'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.deliveryCity ?? order.deliveryAddressId ?? 'N/A'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.transportMode || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{order.shipmentDetails || '—'}</td>
                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">

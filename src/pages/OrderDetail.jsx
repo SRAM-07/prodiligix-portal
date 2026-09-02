@@ -395,6 +395,23 @@ export default function OrderDetail() {
                       <MdAttachMoney size={16} />
                       {shipment.shipmentRate ? 'Update Rate' : 'Set Rate'}
                     </button>
+                    {!shipment.requestApproved && shipment.shipmentRate && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await api.post(`/api/shipments/${shipment.id}/process-deduction`);
+                            setToast('Payment processed successfully');
+                            fetchAll();
+                          } catch (e) {
+                            setToast(e.response?.data?.error || 'Payment processing failed');
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        style={{ color: '#16a34a', backgroundColor: '#dcfce7' }}>
+                        <MdCheckCircle size={16} />
+                        Process Payment
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

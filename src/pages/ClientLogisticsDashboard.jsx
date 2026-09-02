@@ -26,7 +26,7 @@ export default function ClientLogisticsDashboard() {
     try {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
       const [shipmentsRes, walletRes] = await Promise.all([
-        api.get('/api/shipments'),
+        api.get(`/api/shipments/company/${u.companyId}`),
         u?.companyId ? api.get(`/api/wallet/balance/${u.companyId}`).catch(() => null) : Promise.resolve(null)
       ]);
       setShipments(shipmentsRes.data || []);
@@ -131,11 +131,11 @@ export default function ClientLogisticsDashboard() {
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Services</p>
             <h1 className="text-xl font-bold text-gray-800">Logistics Dashboard</h1>
           </div>
-          <button onClick={() => navigate('/client/logistics/book')}
+          {getCurrentUser()?.role !== 'company_admin' && <button onClick={() => navigate('/client/logistics/book')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm"
             style={{ backgroundColor: BRAND }}>
             <MdAdd size={18} /> Book Shipment
-          </button>
+          </button>}
         </div>
 
         <div className="p-6 space-y-6">
