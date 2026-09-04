@@ -645,9 +645,11 @@ export default function OrderDetail() {
                         )}
                       </div>
                       <div className="pb-8">
-                        <p className="text-sm font-medium text-gray-700">{scan.scan || 'Scan update'}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{(scan.time || scan.scan_datetime) ? new Date(scan.time || scan.scan_datetime).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</p>
+                        <p className="text-sm font-medium text-gray-700">
+                          {({'PKD': 'Picked', 'IT': 'In Transit', 'OFD': 'Out for Delivery', 'DL': 'Delivered', 'RTO': 'RTO', 'RTD': 'RTO Delivered', 'UD': 'Undelivered', 'RAD': 'Reached at Destination'})[scan.statusCode] || scan.scan || scan.instructions || 'Scan update'}
+                        </p>
                         <p className="text-xs text-gray-400 mt-0.5">{scan.location || '—'}</p>
-                        <p className="text-xs text-gray-300 mt-0.5">{scan.scan_datetime || '—'}</p>
                       </div>
                     </div>
                   ))}

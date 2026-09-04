@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getCurrentUser } from '../services/authService';
-import { MdBusiness, MdLocationOn, MdAccountBalanceWallet, MdPeople, MdSettings, MdFactory, MdReceipt } from 'react-icons/md';
+import { MdBusiness, MdLocationOn, MdAccountBalanceWallet, MdPeople, MdSettings, MdFactory, MdReceipt, MdArticle } from 'react-icons/md';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   MdDashboard, 
@@ -124,12 +124,13 @@ export default function Sidebar({ onToggle }) {
     ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdBusiness size={20}/>, label: 'Companies', path: '/companies' },
           { icon: <MdLocationOn size={20}/>, label: 'Addresses', path: '/addresses' },
           { icon: <MdAccountBalanceWallet size={20}/>, label: 'Wallet', path: '/wallet' },
+          { icon: <MdArticle size={20}/>, label: 'Invoices', path: '/admin/invoices' },
           { icon: <MdPeople size={20}/>, label: 'Users', path: '/users' },
           { icon: <MdSettings size={20}/>, label: 'Map Services', path: '/map-services' },
           { icon: <MdFactory size={20}/>, label: 'Plants', path: '/plants' },
           { icon: <MdReceipt size={20}/>, label: 'Purchase Orders', path: '/purchase-orders' }] }]
     : isCRM
-    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdAccountBalanceWallet size={20}/>, label: 'Wallet Ledger', path: '/wallet/ledger' }] }]
+    ? [...menuSections, { label: 'ADMIN', items: [{ icon: <MdAccountBalanceWallet size={20}/>, label: 'Wallet Ledger', path: '/wallet/ledger' }, { icon: <MdArticle size={20}/>, label: 'Invoices', path: '/admin/invoices' }] }]
     : menuSections;
   const navigate = useNavigate();
   const location = useLocation();
@@ -176,7 +177,7 @@ export default function Sidebar({ onToggle }) {
       </div>
 
       {/* Menu sections */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-2">
         {sections.map((section, sIndex) => (
           <div key={sIndex}>
 

@@ -6,7 +6,7 @@ import {
   MdDashboard, MdLocalShipping, MdDescription,
   MdCardGiftcard, MdEvent, MdComputer,
   MdBarChart, MdUpload, MdLogout
-, MdReceiptLong } from 'react-icons/md';
+, MdReceiptLong, MdArticle } from 'react-icons/md';
 
 const serviceMenus = {
   dashboard: [
@@ -16,6 +16,8 @@ const serviceMenus = {
     { icon: <MdCardGiftcard size={20} />, label: 'Corporate Gifting', path: '/gifting' },
     { icon: <MdEvent size={20} />, label: 'Event & Team Outing', path: '/events' },
     { icon: <MdComputer size={20} />, label: 'IT Solutions', path: '/it-solutions' },
+    { icon: <MdReceiptLong size={20} />, label: 'Wallet Ledger', path: '/wallet/ledger', section: 'FINANCE' },
+    { icon: <MdArticle size={20} />, label: 'Invoices', path: '/client/invoices' },
   ],
   logistics: [
     { icon: <MdDashboard size={20} />, label: 'Overview', path: '/client-dashboard' },

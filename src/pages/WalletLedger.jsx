@@ -13,6 +13,7 @@ const REASON_LABELS = {
   stamp_paper_charge: 'Stamp Paper',
   rto_charge: 'RTO Charge',
   shipment_rto_charge: 'RTO Charge',
+  wallet_recharge: 'Wallet Recharge',
   cancellation_refund: 'Cancellation Refund',
   manual_deduction: 'Manual Deduction',
 };
@@ -31,6 +32,8 @@ export default function WalletLedger() {
   const [companies, setCompanies] = useState([]);
   const [wallet, setWallet] = useState(null);
   const [filterMonth, setFilterMonth] = useState('all');
+  const [activeTab, setActiveTab] = useState('transactions');
+  const [recharges, setRecharges] = useState([]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -45,9 +48,11 @@ export default function WalletLedger() {
     Promise.all([
       api.get(`/api/wallet/transactions/${companyId}`),
       api.get(`/api/wallet/balance/${companyId}`),
-    ]).then(([txRes, walletRes]) => {
+      api.get(`/api/wallet/recharges/${companyId}`),
+    ]).then(([txRes, walletRes, rechargeRes]) => {
       setTransactions(txRes.data);
       setWallet(walletRes.data);
+      setRecharges(rechargeRes.data);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [selectedCompany, user?.companyId]);
 
@@ -68,8 +73,8 @@ export default function WalletLedger() {
       t.serviceRequestId || '—',
       t.transactionType === 'debit' ? 'Debit' : 'Credit',
       REASON_LABELS[t.reason] || t.reason,
-      (t.transactionType === 'debit' ? '-' : '+') + '₹' + parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-      t.balanceAfter ? '₹' + parseFloat(t.balanceAfter).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '—',
+      '"' + (t.transactionType === 'debit' ? '-' : '+') + parseFloat(t.amount).toFixed(2) + '"',
+      t.balanceAfter ? '"' + parseFloat(t.balanceAfter).toFixed(2) + '"' : '—',
     ]);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -133,6 +138,57 @@ export default function WalletLedger() {
           </div>
         </div>
       )}
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-gray-100">
+        {[['transactions', 'Transactions'], ['recharges', 'Recharges']].map(([tab, label]) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            style={{ borderColor: activeTab === tab ? '#068BC9' : 'transparent', color: activeTab === tab ? '#068BC9' : '#6b7280' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'recharges' ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-sm font-semibold text-gray-700">Recharge History ({recharges.length})</p>
+          </div>
+          {recharges.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 text-sm">No recharges found</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {['Date', 'Transaction ID', 'Amount', 'Status'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {recharges.map(r => (
+                    <tr key={r.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {r.rechargedDate || (r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—')}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{r.transactionNumber || '—'}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-green-600 whitespace-nowrap">
+                        +₹{parseFloat(r.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium text-green-600 bg-green-50">Success</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
 
       {/* Month Filter */}
       <div className="flex gap-2">
@@ -202,6 +258,8 @@ export default function WalletLedger() {
           </div>
         )}
       </div>
+        </div>
+      )}
     </div>
   );
 

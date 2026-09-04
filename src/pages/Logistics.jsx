@@ -40,7 +40,7 @@ export default function Logistics() {
   const [sortOrder, setSortOrder] = useState('newest');
   const [showStatusOptions, setShowStatusOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchText, setSearchText] = useState('');
   const [openDocDropdown, setOpenDocDropdown] = useState(null);
   const [logisticsData, setLogisticsData] = useState([]);
@@ -103,8 +103,8 @@ export default function Logistics() {
     return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / rowsPerPage));
-  const paginated = sorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const totalPages = rowsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(sorted.length / rowsPerPage));
+  const paginated = rowsPerPage === 'all' ? sorted : sorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -446,7 +446,17 @@ export default function Logistics() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-xs text-gray-400">
-                Showing {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, sorted.length)} of {sorted.length}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Rows per page:</span>
+                  <select value={rowsPerPage} onChange={e => { setRowsPerPage(e.target.value === 'all' ? 'all' : parseInt(e.target.value)); setCurrentPage(1); }}
+                    className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-600 outline-none">
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value="all">All</option>
+                  </select>
+                </div>
+                Showing {rowsPerPage === 'all' ? 1 : (currentPage - 1) * rowsPerPage + 1}-{rowsPerPage === 'all' ? sorted.length : Math.min(currentPage * rowsPerPage, sorted.length)} of {sorted.length}
               </p>
               <div className="flex items-center gap-1">
                 <button

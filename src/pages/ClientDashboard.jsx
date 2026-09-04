@@ -322,7 +322,7 @@ export default function ClientDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }} itemSorter={(item) => ['Logistics', 'Stamp Paper', 'Corporate Gifting', 'Events', 'IT Solutions'].indexOf(item.dataKey)} />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
                 <Bar dataKey="Logistics" fill="#068BC9" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="Stamp Paper" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
@@ -369,7 +369,7 @@ export default function ClientDashboard() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => navigate('/client/rate-calculator')}
                 className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
@@ -382,12 +382,7 @@ export default function ClientDashboard() {
                 <span className="text-lg">📚</span>
                 <span className="text-xs font-medium text-gray-600">Knowledge Base</span>
               </button>
-              <button
-                onClick={() => navigate('/wallet/ledger')}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                <span className="text-lg">💳</span>
-                <span className="text-xs font-medium text-gray-600">Wallet Ledger</span>
-              </button>
+
             </div>
           </div>
 
