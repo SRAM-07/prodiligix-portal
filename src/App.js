@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getCurrentUser } from './services/authService';
 import WalletLedger from './pages/WalletLedger';
 import ClientInvoices from './pages/ClientInvoices';
+import UserManual from './pages/UserManual';
 import AdminInvoices from './pages/AdminInvoices';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -251,6 +252,7 @@ function App() {
         } />
         <Route path="/wallet/ledger" element={<ProtectedRoute><WalletLedger /></ProtectedRoute>} />
         <Route path="/client/invoices" element={<ProtectedRoute><ClientInvoices /></ProtectedRoute>} />
+        <Route path="/client/manual" element={<ProtectedRoute><UserManual /></ProtectedRoute>} />
         <Route path="/admin/invoices" element={<ProtectedRoute><AdminInvoices /></ProtectedRoute>} />
         <Route path="/client/reports" element={
           <ProtectedRoute allowedRoles={CLIENT_ROLES}>
