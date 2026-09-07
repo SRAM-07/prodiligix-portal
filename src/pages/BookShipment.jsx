@@ -13,7 +13,7 @@ const TRANSPORTERS_BY_MODE = {
   'Air': ['Delhivery', 'Bluedart'],
   'Air Urgent': ['Indigo', 'Akasa Air', 'Air India', 'Bluedart'],
   'Surface': ['Delhivery', 'Bluedart', 'ProDiligix'],
-  'Surface Urgent': ['ProDiligix'],
+  'Surface Urgent': ['Delhivery', 'ProDiligix', 'Porter'],
   'PTL (Part Truck Load)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
   'FTL (FullTruckLoad)': ['DSN', 'ProDiligix', 'Roadways', 'Porter'],
 };
