@@ -226,9 +226,9 @@ export default function UserManual() {
                 <p className="text-sm text-gray-500 text-xs mt-2">For wallet top-ups, rate queries, booking issues</p>
               </div>
               <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Carrier Support</p>
-                <p className="text-sm text-gray-600 mb-1">Delhivery: support.delhivery.com</p>
-                <p className="text-sm text-gray-600">Bluedart: bluedart.com/customerservice</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">ProDiligix Support</p>
+                <p className="text-sm text-gray-600 mb-1">Level 1: <a href="mailto:support@prodiligix.com" style={{color:'#068BC9'}}>support@prodiligix.com</a></p>
+                <p className="text-sm text-gray-600">Level 2: <a href="mailto:vijay.k@prodiligix.com" style={{color:'#068BC9'}}>vijay.k@prodiligix.com</a></p>
               </div>
             </div>
             <div>
